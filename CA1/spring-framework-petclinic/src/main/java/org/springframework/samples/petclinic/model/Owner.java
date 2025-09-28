@@ -71,6 +71,7 @@ public class Owner extends Person {
     public void setNif(String nif) {
         this.nif = nif;
     }
+
     public String getAddress() {
         return this.address;
     }
