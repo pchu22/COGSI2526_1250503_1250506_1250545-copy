@@ -6,58 +6,68 @@ This document provides step-by-step instructions on using Git for version contro
 ##  Copy the code of Spring Petclinic application under the CA1 folder
 
 ```bash
-git clone <repo-url> # Copies the code of spirng petclinic application to the current directory (CA1). **Note**: Replace <repo-url> for the actual repository url you want to clone the application from.
-git add . # Adds all files to the stagin area
-git commit -m "<message>" # Commit the changes to the staging area. **Note**: Replace <message> for the actual message you want to include when commiting the changes.
-git push origin main # Push the changes to main branch of the repository
+git clone https://github.com/spring-petclinic/spring-framework-petclinic # Copies the code of spring petclinic application to the current directory (CA1).
+git add . # Adds all changes to the staging area
+git commit -m "CA1_1st-week: petclinic code copied to CA1; Tag added" # Commits staged changes with a descriptive message.
+git push origin main # Push the changes to "main" branch of the repository "COGSI2526_1250503_1250506_1250545".
 ```
 
 ## Use tags to mark the versions of the application
 
 ```bash
-git tag -a <tag-name> <hash> # Create the tag <tag-name> and add that same tag to the <hash> commit. **Note**: Replace <tag-name> for the actual tag name you want to add to the commit, and replace <hash> for the actual commits hash.
+git tag -a v1.1.0 c1100f2 # Create the tag "v1.1.0" and add that same tag to the c1100f2 commit.
 ```
 
-## Development of a new field (professionalLicenseNumber) to the application + commit and push the changes to GitHub + Add adition of a tag to the commit
+## Development of a new field **professionalLicenseNumber** to the application + commit and push the changes to GitHub + Add adition of a tag to the commit
 
 ```bash
-git add . # Adds all files to the staging area
-git commit -m "<message>" # This command was used to commit all changes to the stagin area
-git push origin main # This command was used to push all the changes to main branch of the repository
-git tag -a v1.2.0 <hash> # This command was used to create the tag "v1.2.0" and add it to the <hash> commit
+**Change the source code of Spring Petclinic application**
+
+git add . # Adds all changes to the staging area.
+git commit -m "Professional License Number field added to Vet" # Commits staged changes with a descriptive message.
+git push origin main # Push the changes to "main" branch of the repository "COGSI2526_1250503_1250506_1250545".
+git tag -a v1.2.0 686a61b # Create the tag "v1.2.0" and add that same tag to the 686a61b commit.
 ```
 
 ## Check commit history of the repository using git log and testing it with multiple fomatting options
 
 ```bash
-git log --oneline # This commad is used to log all the changes done to the repo, each one using only one line
-git log --graph # This command display all the changes done to the repository with more information
+git log --oneline # Logs the commit history in a condensed format (each commit is displayed in a single line).
+git log --graph # Logs a graphical commit tree.
 ```
 
 ## Reverting the changes to a specific commit
 
 ```bash
-git revert <hash> 
-git add .
-git commit -m "<message>"
-git push origin main
+git revert c1100f2 # Creates a new commit that undoes the changes from c1100f2.
+git add . # Adds all changes to the staging area.
+git commit -m "Reverting to commit c1100f2" # Commits staged changes with a descriptive message.
+git push origin main # Push the changes to "main" branch of the repository "COGSI2526_1250503_1250506_1250545".
+
+**Note**
+git revert creates a new commit that undoes the changes introduced by a previous commit. Unlike git reset, it does not rewrite history. Instead, it adds a new commit that applies the inverse of the selected commit.
+
+Key points:
+- Only the files that were changed in the original commit will be touched.
+- Files not changed by the original commit will not appear in the revert commit.
+- This makes revert a surgical and safe way to undo changes in shared/public branches.
 ```
 
 ## Get repository default branch and check when was the last commit
 
 ```bash
-git config --get init.deafultBranch # Shows the default branch name
-git log --graph # Logs the information of all the commits
+git config --get init.deafaultBranch # Shows the default branch name.
+git log --graph # Logs a graphical commit tree.
 ```
 
 ## Show how many contributors made commits to the repository and what commits they made
 
 ```bash
-git shortlog # Shows all commits and what contributor made which commit
+git shortlog # Summarizes commits grouped by author.
 ```
 
-## Adding a tag to a specific commit
+## Adding the tag "ca1-part1" to the last commit
 
 ```bash
-git tag -a ca1-part1 <hash> # Adds a tag to the <hash> commit
+git tag -a ca1-part1 <hash> -m "CA1 Part1 Completed" # Create the tag "ca1-part1" and add that same tag to the <hash> commit with the message "CA1 Part1 Completed".
 ```
