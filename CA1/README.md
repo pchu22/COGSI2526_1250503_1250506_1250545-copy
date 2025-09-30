@@ -16,6 +16,7 @@ git push origin main # Push the changes to "main" branch of the repository "COGS
 
 ```bash
 git tag -a v1.1.0 c1100f2 # Create the tag "v1.1.0" and add that same tag to the c1100f2 commit.
+git push origin v1.1.0 # Push the tag "v1.1.0" to the repository "COGSI2526_1250503_1250506_1250545"
 ```
 
 ## Add new field **professionalLicenseNumber** to the application, commit and push changes to GitHub, and tag the commit
@@ -27,6 +28,7 @@ git add . # Adds all changes to the staging area.
 git commit -m "Professional License Number field added to Vet" # Commits staged changes with a descriptive message.
 git push origin main # Push the changes to "main" branch of the repository "COGSI2526_1250503_1250506_1250545".
 git tag -a v1.2.0 686a61b # Create the tag "v1.2.0" and add that same tag to the 686a61b commit.
+git push origin v1.2.0 # Push the tag "v1.2.0" to the repository "COGSI2526_1250503_1250506_1250545"
 ```
 
 ## Check commit history of the repository
@@ -70,4 +72,5 @@ git shortlog # Summarizes commits grouped by author.
 
 ```bash
 git tag -a ca1-part1 c7a8d53 # Create the tag "ca1-part1" and add that same tag to the c7a8d53.
+git push origin ca1-part1 # Push the tag "ca1-part1" to the repository "COGSI2526_1250503_1250506_1250545"
 ```
