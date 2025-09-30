@@ -64,9 +64,7 @@ public class Owner extends Person {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "owner")
     private Set<Pet> pets;
 
-    public String getNif() {
-        return "NIF: " + this.nif;
-    }
+    public String getNif() { return this.nif; }
 
     public void setNif(String nif) {
         this.nif = nif;
