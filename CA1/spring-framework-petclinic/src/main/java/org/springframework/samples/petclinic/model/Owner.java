@@ -65,7 +65,7 @@ public class Owner extends Person {
     private Set<Pet> pets;
 
     public String getNif() {
-        return this.nif.toUpperCase();
+        return "NIF: " + this.nif;
     }
 
     public void setNif(String nif) {
