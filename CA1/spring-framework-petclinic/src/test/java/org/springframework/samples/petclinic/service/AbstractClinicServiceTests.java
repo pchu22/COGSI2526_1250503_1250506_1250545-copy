@@ -168,12 +168,11 @@ abstract class AbstractClinicServiceTests {
         Collection<Vet> vets = this.clinicService.findVets();
 
         Vet vet = EntityUtils.getById(vets, Vet.class, 3);
-        assertThat(vet.getLastName()).isEqualTo("Douglas");
-        assertThat(vet.getEmail()).isEqualTo("douglas@example.com");
-        assertThat(vet.getProfessionalLicenseNumber()).isEqualTo("11113");
-        assertThat(vet.getNrOfSpecialties()).isEqualTo(2);
-        assertThat(vet.getSpecialties().get(0).getName()).isEqualTo("dentistry");
-        assertThat(vet.getSpecialties().get(1).getName()).isEqualTo("surgery");
+        assertThat(vet.getLastName()).isEqualTo("Leary");
+        assertThat(vet.getEmail()).isEqualTo("Leary@example.com");
+        assertThat(vet.getProfessionalLicenseNumber()).isEqualTo("11112");
+        assertThat(vet.getNrOfSpecialties()).isEqualTo(1);
+        assertThat(vet.getSpecialties().get(0).getName()).isEqualTo("radiology");
     }
 
     @Test

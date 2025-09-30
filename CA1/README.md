@@ -74,3 +74,35 @@ git shortlog # Summarizes commits grouped by author.
 git tag -a ca1-part1 c7a8d53 # Create the tag "ca1-part1" and add that same tag to the c7a8d53.
 git push origin ca1-part1 # Push the tag "ca1-part1" to the repository "COGSI2526_1250503_1250506_1250545"
 ```
+
+# CA1 - Version Control (Part II)
+
+## Create a branch named email-field
+
+```bash
+git branch email-field
+git branch
+git checkout email-field
+
+**Change the source code of Spring Petclinic to support email-field in the Vet model**
+
+git add .
+git commit -m " Add email field support in the vet model"
+git push origin email-field
+git tag -a v1.3.0 5175f8c
+git push --tags
+```
+
+## Indetification of remote branches and their respective local branches
+
+```bash
+main -> origin/main
+email-field -> origin/email-field
+```
+
+## Add the tag "ca1-part2" to the last commit
+
+```bash
+git tag -a ca1-part2 <hash>
+git push --tags
+```
