@@ -40,6 +40,10 @@ import org.springframework.beans.support.PropertyComparator;
 @Table(name = "vets")
 public class Vet extends Person {
 
+    @Column(name = "email")
+    @NotEmpty
+    private String email;
+
     @Column(name = "professional_license_number")
     @NotEmpty
     private String professionalLicenseNumber;
@@ -81,5 +85,13 @@ public class Vet extends Person {
 
     public void setProfessionalLicenseNumber(String professionalLicenseNumber) {
         this.professionalLicenseNumber = professionalLicenseNumber;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }
