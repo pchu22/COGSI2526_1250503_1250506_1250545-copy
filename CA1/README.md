@@ -87,11 +87,27 @@ git checkout email-field
 **Change the source code of Spring Petclinic to support email-field in the Vet model**
 
 git add .
-git commit -m " Add email field support in the vet model"
+git commit -m "Add email field support in the vet model"
 git push origin email-field
 git tag -a v1.3.0 5175f8c
 git push --tags
 ```
+## Create conflicting edits on the two branches
+
+```bash
+**Change source code of Spring Petclinic in email-field branch**
+
+git add .
+git commit -m "Change Owner.java to cause conflicts when merging"
+git switch main
+
+**Change source code of Spring Petclinic in main branch**
+
+git add .
+git commit -m "Change Owner.java to cause conflicts when merging"
+git merge email-field
+```
+
 
 ## Indetification of remote branches and their respective local branches
 
