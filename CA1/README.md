@@ -125,6 +125,6 @@ email-field -> origin/email-field
 ## Add the tag "ca1-part2" to the last commit
 
 ```bash
-git tag -a ca1-part2 <hash>
-git push --tags
+git tag -a ca1-part2 dd87f41 # Create the tag "v1.3.0" and add that same tag to the 5175f8c commit.
+git push origin ca1-part2 # Push the tag "v1.3.0" to the repository "COGSI2526_1250503_1250506_1250545".
 ```
