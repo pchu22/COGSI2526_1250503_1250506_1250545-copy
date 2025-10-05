@@ -80,34 +80,40 @@ git push origin ca1-part1 # Push the tag "ca1-part1" to the repository "COGSI252
 ## Create a branch named email-field
 
 ```bash
-git branch email-field
-git branch
-git checkout email-field
+git branch email-field # Create a new branch named "email-field".
+git branch # Verify the branches and confirm which one is active.
+git checkout email-field # Switch from current branch ("main") to the "email-field" branch.
 
 **Change the source code of Spring Petclinic to support email-field in the Vet model**
 
-git add .
-git commit -m "Add email field support in the vet model"
-git push origin email-field
-git tag -a v1.3.0 5175f8c
-git push --tags
+git add . # Add all changes to the staging area.
+git commit -m "Add email field support in the vet model" # Commits staged changes with a descriptive message.
+git push origin email-field # Push the changes to "email-filed" branch of the repository "COGSI2526_1250503_1250506_1250545".
+git tag -a v1.3.0 5175f8c # Create the tag "v1.3.0" and add that same tag to the 5175f8c commit.
+git push origin v1.3.0 # Push the tag "v1.3.0" to the repository "COGSI2526_1250503_1250506_1250545".
 ```
 ## Create conflicting edits on the two branches
 
 ```bash
 **Change source code of Spring Petclinic in email-field branch**
 
-git add .
-git commit -m "Change Owner.java to cause conflicts when merging"
-git switch main
+git add . # Add all changes to the staging area.
+git commit -m "Change Owner.java to cause conflicts when merging" # Commits staged changes with a descriptive message.
+git switch main # Switches from "email-field" branch to "main" branch.
 
 **Change source code of Spring Petclinic in main branch**
 
-git add .
-git commit -m "Change Owner.java to cause conflicts when merging"
-git merge email-field
-```
+git add . # Add all changes to the staging area.
+git commit -m "Change Owner.java to cause conflicts when merging" # Commits staged changes with a descriptive message.
+git merge email-field # Initiates the merge process of branch "email-field" into branch "main"
 
+**After merge conflict appears, open conflicting files and resolve manually. Once resolved**
+
+git add . # Add all changes to the staging area.
+git commit -m "Fix Owner.java" # Commits staged changes with a descriptive message.
+git push origin main # Push the changes to "main" branch of the repository "COGSI2526_1250503_1250506_1250545".
+git branch -d email-field # Removes "email-field" from the local repository
+```
 
 ## Indetification of remote branches and their respective local branches
 
