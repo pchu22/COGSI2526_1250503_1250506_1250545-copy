@@ -133,44 +133,30 @@ git push origin ca1-part2 # Push the tag "v1.3.0" to the repository "COGSI2526_1
 
 ## Mercurial
 
-```bash
 In order to manage software development projects, especially the Linux Kernel (even though the Linux Kernel project eventually selected Git), Matt Mackall developed Mercurial, a free and open-source distributed version control system, in 2005. Mercurial has been widely utilized by groups including Mozilla, Facebook, Google, and the W3C. Uses a decentralized architecture, it functions locally and independently of the network. Supports both HTTP and SSH protocols in order to access repositories and uniquely identifies revisions using SHA-1 hashes. Its main tool, hg, provides consistent and intuitive commands. It was mainly written in Python, with some performance-critical parts in C and a growing amount in Rust.
-```
 
 ## Apache Subversion
 
-```bash
 Also known as SVN, is a open-source version management system, widely used by the open-source comunity and corporate sector. SVN created in C by CollabNet, Inc. in 2000 to replace the Concurrent Versions System, and later maintained by Apache Software Foundation. It lets developers maintain both recent and older versions of documents and uses a centralized architecture that prioritizs stability, simplicity, and data integrity. The Apache Software Foundation, FreeBSD, SourceForge, and, from 2006 to 2019, the GCC compiler project are some of the projects that have made use of Subversion.
-```
 
 ## Concurrent Version System
 
-```bash
 Also know as CVS, is a version control system written in C and originally developed by Dick Grune in July 1986, extends its capabilities by adding repository-level change tracking and a client–server model for collaborative development. It uses delta compression to efficiently store multiple file versions. Operates through a centralized architecture, and allows multiple developers to work concurrently from the main repository. It excludes symbolic links for security reasons and manages related files as “modules” within its repository. CVS also supports branching for parallel development and can run user-defined scripts. Although later superseded by more modern systems, CVS laid the groundwork for many version control concepts still used today.
-```
 
 ## Comparison of Git, Mercurial, SVN and CVS
 
 ### Speed
 
-```bash
 Git and Mercurial are generally considered the fastest version control systems, as they utilize a decentralized model and store data in the form of hashed values, allowing for faster data transfer and retrieval. SVN and CVS are both centralized systems and may not be as fast as Git and Mercurial in terms of data transfer and retrieval.
-```
 
 ### Flexibility
 
-```bash
 Git and Mercurial are the most flexible systems, allowing developers to easily create multiple branches, experiment new features, and merge changes efficiently. The decentralized architecture allows each developer to work independently. SVN, while versatile, functions on a centralized structure that may make branching and merging more difficult and slower compared to Git and Mercurial. In contrast, CVS is rigid and seen as obsolete by today’s criteria, with limited branching and merging functions that result in increased conflicts.
-```
 
 ### Security
 
-```bash
-Git and Mercurial both employ a decentralized approach, indicating that there is no central repository for the data. This complicates the process of losing or compromising data. SVN features robust security protocols, utilizing SSL/TLS encryption for data transmission and offering various options for authentication and authorization. CVS exhibits less robust security protocols than other version control systems since it lacks encryption for data transmission and offers few choices for authentication and authorization.
-``` 
+Git and Mercurial both employ a decentralized approach, indicating that there is no central repository for the data. This complicates the process of losing or compromising data. SVN features robust security protocols, utilizing SSL/TLS encryption for data transmission and offering various options for authentication and authorization. CVS exhibits less robust security protocols than other version control systems since it lacks encryption for data transmission and offers few choices for authentication and authorization. 
 
 ### Ease of Use
 
-```bash
 Git and Mercurial can be quite challenging for new users, as they employ a CLI and present a steep learning curve. SVN is more accessible to users since it features a GUI and is simpler for beginners. CVS is also straightforward, featuring a basic CLI and is easy for beginners.
-```
