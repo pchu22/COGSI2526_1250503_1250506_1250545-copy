@@ -160,3 +160,11 @@ Git and Mercurial both employ a decentralized approach, indicating that there is
 ### Ease of Use
 
 Git and Mercurial can be quite challenging for new users, as they employ a CLI and present a steep learning curve. SVN is more accessible to users since it features a GUI and is simpler for beginners. CVS is also straightforward, featuring a basic CLI and is easy for beginners.
+
+# Self-Evaluation
+
+```bash
+Daniel (1250503) - 75%
+Diogo (1250506) - 75%
+Pedro (1250545) - 100%
+```
