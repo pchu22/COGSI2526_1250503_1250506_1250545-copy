@@ -20,7 +20,7 @@ git push origin ca2-v1.1.0
 ```bash
 Start by creating the following task inside build.gradle.
 ```
-<img src="Images/01.png" alt="runServer-task" width="200"/>
+<img src="Images/01.PNG" alt="runServer-task" width="200"/>
 
 ```bash
 Run the command ./gradlew task runServer~. The result should look like this:
