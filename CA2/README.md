@@ -8,7 +8,7 @@ git branch
 git switch Gradle-W1
 ```
 
-## Add a tag to makk the application version
+## Add a tag to mark the application version
 
 ```bash
 git tag -a ca2-v1.1.0 <hash>
@@ -20,7 +20,7 @@ git push origin ca2-v1.1.0
 ```bash
 Start by creating the following task inside build.gradle.
 ```
-![alt text](MCS/COGSI/CA2/Images/01.png "runServer-task")
+![alt text](Images/01.png "runServer-task")
 
 ```bash
 Run the command ./gradlew task runServer~. The result should look like this:
