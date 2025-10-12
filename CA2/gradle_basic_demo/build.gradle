@@ -65,3 +65,21 @@ task runServer(type:JavaExec, dependsOn: classes){
 
     args '59001'
 }
+
+task runBackupRoutine(type: Copy){
+    from 'src/'
+    into 'build/backup'
+}
+
+task zipBackup(type: Zip){
+    from(compileJava.destinationDirectory) {
+        include '**/*.class'
+    }
+
+    destinationDirectory = file('build/backup-zipped')
+
+    archiveBaseName = project.name
+    archiveExtension = 'zip'
+}
+
+zipBackup.dependsOn compileJava
