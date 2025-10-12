@@ -105,9 +105,9 @@ Gradle can choose the correct JDK (e.g 17) for the project build, even though th
 
 This ensures **consistency** across all environments, as demonstrated in the output where Gradle auto-provisions JDK 17 for the project, even though JDK 21 is installed on the system.
 
-## Add a new tag, to mark commit <hash> as last of the CA2-Part I
+## Add a new tag, to mark commit d12d44b, as last of the CA2-Part I
 ``bash
-git tag -a ca2-part1 <hash> #  Create the tag "ca2-part1" and add that same tag to the <hash> commit.
+git tag -a ca2-part1 d12d44b #  Create the tag "ca2-part1" and add that same tag to the d12d44b commit.
 git push origin ca2-part1 #  Push the tag "ca2-part1" to the remote repository "COGSI2526_1250503_1250506_1250545".
 ```
 
