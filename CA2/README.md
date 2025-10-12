@@ -17,16 +17,14 @@ git push origin ca2-v1.1.0
 
 ## Add a runServer task to build.gradle
 
-```bash
 Start by creating the following task inside build.gradle.
-```
-<img src="Images/01.PNG" alt="runServer-task" width="200"/>
+<img src="Images/01_01.PNG" alt="runServer task source code"/>
 
-```bash
-Run the command ./gradlew task runServer~. The result should look like this:
+Then, run the command **./gradlew task runServer**. The result should look like this:
+<img src="Images/01_02.PNG" alt="runServer task running on terminal"/>
 
-```
-
+When a chatter joins the server, the terminal output should be something like this:
+<img src="Images/01_03.PNG" alt="renServer Message after a chatter joins"/>
 ## 
 ## 
 ## 
