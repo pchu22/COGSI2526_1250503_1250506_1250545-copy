@@ -21,9 +21,13 @@ First, create the following task inside `build.gradle`.
 
 <img src="Images/01_01.PNG" alt="runServer task source code" width="500"/>
 
-Then, run the command **./gradlew task runServer**. The result should look like this:
+This task will execute the code in `ChatServerApp.java` and has 59001 as argument (which will be the server port).
+ 
+Then, in the terminal, run the command **./gradlew runServer** to rune the previously created task. The result should look like this:
 
 <img src="Images/01_02.PNG" alt="runServer task running on terminal" width="500"/>
+
+The output indicates the server is up and running.
 
 When a chatter joins the server, the terminal output should be something like this:
 
@@ -34,36 +38,42 @@ Create `test/java/basic_demo` directories inside the `src` folder of the source 
 
 <img src="Images/02_03.PNG" alt="AppTest code" width="500"/>
 
-You'll need to make some changes to your build.gradle in order to add JUnit dependencies. To achieve that, make sure your build.gradle has the following lines of code:
+This unit test verifies that the `getGreeting()` method inside App.java returns the string `Welcome to Multi-User Chat Application!`. If it does, the test succeds and the application is executed.
+
+You'll need to make some changes to your `build.gradle` in order to add **JUnit dependencies**. For that purpose, make sure your `build.gradle` contains these lines of code:
 
 <img src="Images/02_01.PNG" alt="build.gradle JUnit dependencies" width="500"/>
 
-To run the test, use the command **./gradlew test**. The output should be something like this:
+To run the test, inside the terminal, use the command **./gradlew test**. The output should be something like this:
 
 <img src="Images/02_04.PNG" alt="./gradlew test - command output" width="500"/>
 
 ## Add a new task of type Copy, to be used to make a backup of the source code of the application 
-To add a new task **"runBackupRoutine"**, inside your build.gradle file you'll have to add the following code:
+To add a new task **"runBackupRoutine"**, you must place the following code in your `build.gradle` file:
 
 <img src="Images/03_01.PNG" alt="runBackupRoutine - task source code" width="500"/>
 
-After adding the code to the build.gradle file, execute the command **./gradlew task runBackupRoutine**. The output should look like this:
+This task copies the code from `src/` directory and pastes it into the `build/backup` directory. If the folder `backup` doesn't exist, a new one is created.
+
+After adding the code to the `build.gradle` file, execute the command **./gradlew runBackupRoutine**, in the terminal. The output should look like this:
 
 <img src="Images/03_02.PNG" alt="./gradlew task runBackupRoutine - command output" width="500"/>
 
-The runBackupRoutine task will create a new folder named **backup** inside the **build** directory.
+The **runBackupRoutine** task will create a new folder named `backup`, if it doesn't exist, inside the `build` directory.
 <img src="Images/03_03.PNG" alt="folder backup" width="500"/>
 
 ## Add a new task of type Zip, to be used to make an archive (i.e .zip) of the backup of the application
-To add a new task **"zipBackup"**, inside your build.gradle file you'll have to add the following code:
+To add a new task **"zipBackup"**, you must place the following code in your `build.gradle` file:
 
 <img src="Images/04_01.PNG" alt="zipBackup - task source code" width="500"/>
 
-After adding the code to the build.gradle file, execute the command **./gradlew task zipBackup**. The output should look like this:
+This snippet of code will include all the `.class` file in the newly created archive, and save it in the `build/backup-zipped` directory.
+
+After adding the code to the `build.gradle` file, execute the command **./gradlew zipBackup**. The output should look like this:
 
 <img src="Images/04_02.PNG" alt="./gradlew task zipBackup - command output" width="500"/>
 
-The zipBackup task will create a new folder named **backup-zipped** inside the **build** directory.
+The zipBackup task will create a new folder named `backup-zipped` inside the `build` directory.
 <img src="Images/04_03.PNG" alt="folder backup-zipped" width="500"/>
 
 ## Explanation of how the Gradle Wrapper and the JDK Toolchain ensure the correct versions of the Gradle and the JDK are used without requiring manual installation
@@ -106,9 +116,13 @@ Gradle can choose the correct JDK (e.g 17) for the project build, even though th
 This ensures **consistency** across all environments, as demonstrated in the output where Gradle auto-provisions JDK 17 for the project, even though JDK 21 is installed on the system.
 
 ## Add a new tag, to mark commit d12d44b, as last of the CA2-Part I
-``bash
-git tag -a ca2-part1 d12d44b #  Create the tag "ca2-part1" and add that same tag to the d12d44b commit.
-git push origin ca2-part1 #  Push the tag "ca2-part1" to the remote repository "COGSI2526_1250503_1250506_1250545".
+To mark the first part of the Class Assignment II as concluded, create the tag `ca2-part1` with the command. The `-a` attribute stages the tag to the `d12d44b` commit.
+```bash
+git tag -a ca2-part1 d12d44b
+```
+To push the tag to the remote repository **COGSI2526_1250503_1250506_1250545**, execute:
+```bash
+git push origin ca2-part1
 ```
 
 # Self-Evaluation
