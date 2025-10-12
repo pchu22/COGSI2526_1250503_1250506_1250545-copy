@@ -1,24 +1,23 @@
 # CA2 - Build Tools (Part I)
-After downloading the gradle_basic_demo source code from **"https://github.com/lmpnogueira/gradle_basic_demo"**, we proceeded with the creation of a new branch, in order to solve the first part of class assignment II. To create and start operating in the new branch, the following commands were executed:
-
+After downloading the `gradle_basic_demo` source code from **"https://github.com/lmpnogueira/gradle_basic_demo"**, create a new branch to address the first part of the Class Assignment II. The following commands were executed to create the branch and start working in it:
 ```bash
-git branch Gradle-W1
-git branch
-git switch Gradle-W1
+git branch Gradle-W1 # Create a new branch named "Gradle-W1".
+git branch # Verify the branches and confirm which one is active.
+git switch Gradle-W1 # Switch from current branch ("main") to the "Gradle-W1" branch.
 ```
 
 ## Add a tag to mark the application version
-You should use a pattern like **major.minor.revision** for your tags (e.g ca2-v1.1.0).
+It is recommended to use a **major.minor.revision** pattern for your tags (e.g., `ca2-v1.1.0`).
 ```bash
 git tag -a ca2-v1.1.0 4b6bc11 
 ```
-The command above will stage the tag "ca2-v1.1.0" to the commit 4b6bc11, and the following command will push that tag to the remote repository **COGSI2526_1250503_1250506_1250545**
+This command stages the tag `ca2-v1.1.0` on commit `4b6bc11`. To push the tag to the remote repository **COGSI2526_1250503_1250506_1250545**, execute:
 ```bash
 git push origin ca2-v1.1.0 
 ```
 
 ## Add a runServer task to build.gradle
-Start by creating the following task inside build.gradle.
+First, create the following task inside `build.gradle`.
 
 <img src="Images/01_01.PNG" alt="runServer task source code" width="500"/>
 
@@ -107,7 +106,10 @@ Gradle can choose the correct JDK (e.g 17) for the project build, even though th
 This ensures **consistency** across all environments, as demonstrated in the output where Gradle auto-provisions JDK 17 for the project, even though JDK 21 is installed on the system.
 
 ## Add a new tag, to mark commit <hash> as last of the CA2-Part I
-
+``bash
+git tag -a ca2-part1 <hash> #  Create the tag "ca2-part1" and add that same tag to the <hash> commit.
+git push origin ca2-part1 #  Push the tag "ca2-part1" to the remote repository "COGSI2526_1250503_1250506_1250545".
+```
 
 # Self-Evaluation
 ```bash
