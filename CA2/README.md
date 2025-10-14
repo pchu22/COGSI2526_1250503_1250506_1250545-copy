@@ -21,7 +21,7 @@ First, create the following task inside `build.gradle`.
 
 <img src="Images/01_01.PNG" alt="runServer task source code" width="500"/>
 
-This task will execute the code in `ChatServerApp.java` and has 59001 as argument (which will be the server port).
+This task will execute the code in `ChatServerApp.java` and has `59001` as argument (which will be the server port).
  
 Then, in the terminal, run the command **./gradlew runServer** to rune the previously created task. The result should look like this:
 
