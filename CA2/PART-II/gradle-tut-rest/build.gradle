@@ -101,6 +101,23 @@ tasks.register("deployToDev"){
     dependsOn tasks.named("copyConfigurations")
 }
 
+tasks.register("generateScript", Exec){
+    group = 'application'
+    description = 'Generates an executable script based on the operating system'
+    dependsOn tasks.named("installDist")
+
+    def exe
+
+    if(System.getProperty("os.name").toLowerCase().contains("windows")){
+        exe = file("${buildDir}/install/${project.name}/bin/${project.name}.bat")
+        commandLine 'cmd.exe', '/d', '/c', exe
+    } else {
+        exe = file("${buildDir}/install/${project.name}/bin/${project.name}")
+        commandLine exe
+    }
+
+}
+
 tasks.register("packageJavadoc", Zip){
     group = 'documentation'
     description = 'Generates Javadoc and packages it into a zip file'
@@ -114,20 +131,3 @@ tasks.register("packageJavadoc", Zip){
     archiveBaseName = "${project.name}-javadoc-${date}"
     archiveExtension = 'zip'
 }
-
-tasks.register("generateScript"){
-    group = 'application'
-    description = 'Generates an executable script based on the operating system'
-    dependsOn tasks.named("installDist")
-
-    def exe
-
-    if(System.getProperty("os.name").toLowerCase().contains("windows")){
-        exe = file("${buildDir}/install/${project.name}/bin/${project.name}.bat")
-    } else {
-        exe = file("${buildDir}/install/${project.name}/bin/${project.name}")
-    }
-
-    commandLine exe
-}
-
