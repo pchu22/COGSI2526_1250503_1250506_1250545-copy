@@ -7,26 +7,39 @@
  */
 
 // Apply the java plugin to add support for Java
-apply plugin: 'java'
-
-// Apply the application plugin to add support for building an application
-apply plugin: 'application'
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
 
 // In this section you declare where to find the dependencies of your project
 repositories {
     // Use jcenter for resolving your dependencies.
     // You can declare any Maven/Ivy/file repository here.
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
     // This dependency is found on compile classpath of this component and consumers.
-    compile 'com.google.guava:guava:23.0'
+    implementation 'com.google.guava:guava:23.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-hateoas'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'jakarta.persistence:jakarta.persistence-api'
+
 
     // Use JUnit test framework
-    testCompile 'junit:junit:4.12'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    runtimeOnly 'com.h2database:h2'
+}
+
+test{
+    useJUnitPlatform()
 }
 
 // Define the main class for the application
-mainClassName = 'App'
+mainClassName = 'payroll/PayrollApplication'
 
