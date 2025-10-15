@@ -63,7 +63,7 @@ set CMD_LINE_ARGS=%*
 :execute
 @rem Setup the command line
 
-set JARPATH=%APP_HOME%\lib\gradle-tut-rest.jar
+set JARPATH=%APP_HOME%\lib\gradle-tut-rest-1.1.0.jar
 
 @rem Execute gradle-tut-rest
 "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_TUT_REST_OPTS%  -jar "%JARPATH%" %CMD_LINE_ARGS%

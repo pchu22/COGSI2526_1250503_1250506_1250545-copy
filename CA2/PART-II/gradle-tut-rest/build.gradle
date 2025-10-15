@@ -5,6 +5,8 @@
  * For more details take a look at the Java Quickstart chapter in the Gradle
  * user guide available at https://docs.gradle.org/4.4.1/userguide/tutorial_java_projects.html
  */
+import org.apache.tools.ant.filters.ReplaceTokens
+import java.text.SimpleDateFormat
 
 // Apply the java plugin to add support for Java
 plugins {
@@ -13,6 +15,8 @@ plugins {
     id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.7'
 }
+
+version = '1.1.0'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -40,6 +44,90 @@ test{
     useJUnitPlatform()
 }
 
+//task.named("build") {
+//    dependsOn tasks.named("javadoc")
+//}
+
 // Define the main class for the application
 mainClassName = 'payroll/PayrollApplication'
+
+tasks.register("cleanDeployment", Delete){
+    group = 'deployment'
+    description = 'Deletes the deployment directory for dev environment'
+
+    delete layout.buildDirectory.dir("deployment/dev")
+}
+
+tasks.register("copyJar", Copy){
+    group = 'deployment'
+    description = 'Copies the built jar into the deployment directory'
+    dependsOn tasks.named("build")
+
+    from layout.buildDirectory.dir("libs/${project.name}-${project.version}.jar")
+    into layout.buildDirectory.dir("deployment/dev")
+}
+
+tasks.register("copyRuntimeDependencies", Copy){
+    group = 'deployment'
+    description = 'Copies runtime dependencies into the deployment directory'
+    dependsOn tasks.named("build")
+
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir("deployment/dev/lib")
+}
+
+tasks.register("copyConfigurations", Copy){
+    group = 'deployment'
+    description = 'Copies configurations (and replaces tokens) into the deployment directory'
+    dependsOn tasks.named("build")
+
+    from ('src/main/resources/*.properties') {
+        filter(ReplaceTokens, tokens: [
+                timestamps: new Date().format('dd-MM-yyyy HH:mm:ss'),
+                version   : project.version
+        ])
+    }
+    into layout.buildDirectory.dir("deployment/dev")
+}
+
+tasks.register("deployToDev"){
+    group = 'deployment'
+    description = 'Deploys the dev build with JARs and comfigurations'
+
+    dependsOn tasks.named("build")
+    dependsOn tasks.named("cleanDeployment")
+    dependsOn tasks.named("copyJar")
+    dependsOn tasks.named("copyRuntimeDependencies")
+    dependsOn tasks.named("copyConfigurations")
+}
+
+tasks.register("packageJavadoc", Zip){
+    group = 'documentation'
+    description = 'Generates Javadoc and packages it into a zip file'
+    dependsOn tasks.named("javadoc")
+
+    from layout.buildDirectory.dir("docs/javadoc")
+    destinationDirectory.set(layout.buildDirectory.dir("docs"))
+
+    def date = new SimpleDateFormat("ddMMyyyy-HHmmss").format(new Date())
+
+    archiveBaseName = "${project.name}-javadoc-${date}"
+    archiveExtension = 'zip'
+}
+
+tasks.register("generateScript"){
+    group = 'application'
+    description = 'Generates an executable script based on the operating system'
+    dependsOn tasks.named("installDist")
+
+    def exe
+
+    if(System.getProperty("os.name").toLowerCase().contains("windows")){
+        exe = file("${buildDir}/install/${project.name}/bin/${project.name}.bat")
+    } else {
+        exe = file("${buildDir}/install/${project.name}/bin/${project.name}")
+    }
+
+    commandLine exe
+}
 
