@@ -131,3 +131,39 @@ tasks.register("packageJavadoc", Zip){
     archiveBaseName = "${project.name}-javadoc-${date}"
     archiveExtension = 'zip'
 }
+
+sourceSets {
+    integrationTest {
+        java {
+            srcDir 'src/integrationTest/java'
+        }
+        resources {
+            srcDir 'src/integrationTest/resources'
+        }
+
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+
+        configurations {
+            integrationTestImplementation.extendsFrom implementation
+            integrationTestRuntimeOnly.extendsFrom runtimeOnly
+        }
+
+        dependencies {
+            integrationTestImplementation 'org.junit.jupiter:junit-jupiter'
+            integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        }
+    }
+}
+
+tasks.register("integrationTest", Test){
+    group = 'verification'
+    description = 'Runs yhe integration tests'
+
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    shouldRunAfter(tasks.named("test"))
+}
+
+check.dependsOn(tasks.named("integrationTest"))
