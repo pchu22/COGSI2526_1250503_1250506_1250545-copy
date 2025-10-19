@@ -115,7 +115,6 @@ tasks.register("generateScript", Exec){
         exe = file("${buildDir}/install/${project.name}/bin/${project.name}")
         commandLine exe
     }
-
 }
 
 tasks.register("packageJavadoc", Zip){

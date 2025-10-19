@@ -140,7 +140,7 @@ In order to run the application from the command line, execute the code `../mvnw
 Then, in you browser enter the URL `localhost:808/employees`, and the result must be the following:
 <img src="PART-II/Images/02_02.PNG" alt="application employees page" width="500"/>
 
-## Build a new Gradle project and replace the App.java with `tut_rest` source code. Make sure all `build.gradle` dependencies and plugins are added to the `build.gradle` file
+## Build a new Gradle project and replace the App.java with `tut_rest` source code. Make sure all dependencies and plugins are added to the `build.gradle` file
 Start by running the command `gradle init` on your terminal. After that, a new project is going to be created and you're going to swap your source code (Hello World) with `tut_rest` source code.
 
 <img src="PART-II/Images/03_01.PNG" alt="tut_rest files in the newly created gradle_tut_rest project" width="500"/>
@@ -196,7 +196,7 @@ To fully confirm your code is successfully running, in your browser, visit the U
 <img src="PART-II/Images/04_03.PNG" alt="application employees page" width="500"/>
 
 ## Custom Gradle Task: deployToDev – Automated Deployment Process
-This task can be developed either in a single block of code, or be splitted in smaller tasks. We opted for develop this task with modularity in mind, and in order to achieve that goal, we developed **four** tasks - cleanDeployment, copyJar, copyRuntimeDependencies, and copyConfigurations. You can find this tasks code below.
+This task can be implemented as a single block of code, or divided in smaller, modular tasks. We opted for a modular approach to improve readability, maitainability and reusability. To achieve this goal, we created **four** separate tasks - **cleanDeployment**, **copyJar**, **copyRuntimeDependencies**, and **copyConfigurations**. The implementation of this tasks is shown below.
 
 ```bash
 tasks.register("cleanDeployment", Delete){
@@ -245,7 +245,7 @@ tasks.register("copyConfigurations", Copy){
 }
 ```
 
-If you decide to pursue a modular approach, just like us, your final `deployToDev` task code should be similar to the following:
+If you decide to follow a modular approach like ours, your final `deployToDev` task should resemble the example shown below.
 ```bash
 tasks.register("deployToDev"){
     group = 'deployment'
@@ -259,11 +259,88 @@ tasks.register("deployToDev"){
 }
 ```
 
-To confirm the task is fully operational, in the terminal, run `./gradlew deployToDev`. The result must be similar to this one: 
+To confirm the task is working correctly, execute `./gradlew deployToDev` in the terminal. The output should resemble the image shown below:
 <img src="PART-II/Images/05_01.PNG" alt="./gradlew deployToDev command result" width="500"/>
 
-A new .jar file will be created and inside the deployment directory you must have this:
+After a successful execution, a new `.jar` file will be generated, and the deployment directory should contain the structure ilustrated below:
 <img src="PART-II/Images/05_02.PNG" alt="gradle-tut-res-<version>.jar file" width="500"/>
+
+## Custom Gradle task: generateScript 
+
+```bash
+tasks.register("generateScript", Exec){
+    group = 'application'
+    description = 'Generates an executable script based on the operating system'
+    dependsOn tasks.named("installDist")
+
+    def exe
+
+    if(System.getProperty("os.name").toLowerCase().contains("windows")){
+        exe = file("${buildDir}/install/${project.name}/bin/${project.name}.bat")
+        commandLine 'cmd.exe', '/d', '/c', exe
+    } else {
+        exe = file("${buildDir}/install/${project.name}/bin/${project.name}")
+        commandLine exe
+    }
+}
+```
+
+## Custom Gradle task: packageJavadoc
+
+```bash
+tasks.register("packageJavadoc", Zip){
+    group = 'documentation'
+    description = 'Generates Javadoc and packages it into a zip file'
+    dependsOn tasks.named("javadoc")
+
+    from layout.buildDirectory.dir("docs/javadoc")
+    destinationDirectory.set(layout.buildDirectory.dir("docs"))
+
+    def date = new SimpleDateFormat("ddMMyyyy-HHmmss").format(new Date())
+
+    archiveBaseName = "${project.name}-javadoc-${date}"
+    archiveExtension = 'zip'
+}
+```
+
+## Create a new SourceSet for Integration Tests
+```bash
+sourceSets {
+    integrationTest {
+        java {
+            srcDir 'src/integrationTest/java'
+        }
+        resources {
+            srcDir 'src/integrationTest/resources'
+        }
+
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+
+        configurations {
+            integrationTestImplementation.extendsFrom implementation
+            integrationTestRuntimeOnly.extendsFrom runtimeOnly
+        }
+
+        dependencies {
+            integrationTestImplementation 'org.junit.jupiter:junit-jupiter'
+            integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        }
+    }
+}
+
+tasks.register("integrationTest", Test){
+    group = 'verification'
+    description = 'Runs yhe integration tests'
+
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    shouldRunAfter(tasks.named("test"))
+}
+
+check.dependsOn(tasks.named("integrationTest"))
+```
 
 # Self-Evaluation
 ```bash
