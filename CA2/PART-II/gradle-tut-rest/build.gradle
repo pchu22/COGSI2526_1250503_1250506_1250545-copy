@@ -157,7 +157,7 @@ sourceSets {
 
 tasks.register("integrationTest", Test){
     group = 'verification'
-    description = 'Runs yhe integration tests'
+    description = 'Runs the integration tests'
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath

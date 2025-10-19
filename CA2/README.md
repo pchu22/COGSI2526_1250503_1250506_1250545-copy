@@ -126,26 +126,30 @@ git push origin ca2-part1
 ```
 
 # CA2 - Build Tools (Part II)
-After downloading the `tut_rest` source code from **"https://github.com/spring-guides/tut_rest"**, create a new branch to address the second part of the Class Assignment II. The following commands were executed to create the branch and start working in it:
+After downloading the `tut_rest` source code from **"https://github.com/spring-guides/tut_rest"**, a new branch was created to address the second part of the CA2. The following commands were executed to create and switch to the new branch:
 ```bash
 git branch Gradle-W2 # Create a new branch named "Gradle-W2".
 git branch # Verify the branches and confirm which one is active.
 git switch Gradle-W2 # Switch from current branch ("Gradle-W1") to the "Gradle-W2" branch.
 ```
 ## Move to the `links` folder and execute the application from the command line 
-In order to run the application from the command line, execute the code `../mvnw spring-boot:run`. In your command line you should see something like what is shown in the image below:
+To run the application from the command line, execute the command `../mvnw spring-boot:run`. Once the command is executed, the terminal should display an output similar to the example shown in the image below:
 
 <img src="PART-II/Images/02_01.PNG" alt="../mvnw spring-boot:run command result" width="500"/> 
 
-Then, in you browser enter the URL `localhost:808/employees`, and the result must be the following:
+Next, open your browser and navigate to `localhost:808/employees`. The page should display a result similar to the following image:
 <img src="PART-II/Images/02_02.PNG" alt="application employees page" width="500"/>
 
-## Build a new Gradle project and replace the App.java with `tut_rest` source code. Make sure all dependencies and plugins are added to the `build.gradle` file
-Start by running the command `gradle init` on your terminal. After that, a new project is going to be created and you're going to swap your source code (Hello World) with `tut_rest` source code.
-
+## Create a new Gradle project and integrate `tut_rest` source code
+In your terminal run the command
+```bash
+gradle init
+```
+This will create a new gradle project with the default settings.
+Replace the existing `App.java` with the `tut_rest` source code.
 <img src="PART-II/Images/03_01.PNG" alt="tut_rest files in the newly created gradle_tut_rest project" width="500"/>
 
-After doing that, you need to add all the needed dependencies and plugins to your `build.gradle`. Your build file should look something like this:
+Update the build.gradle with the needed dependencies and plugins. Your build file should look similar to the following:
 ```bash
 import org.apache.tools.ant.filters.ReplaceTokens
 
@@ -185,11 +189,11 @@ test{
     useJUnitPlatform()
 }
 ```
-After performing these changes, in the terminal run the command `./gradlew clean build`. The result should look like this:
+
+After performing these changes, in the terminal run the command `./gradlew clean build`. The result should resemble the image shown below:
 <img src="PART-II/Images/04_01.PNG" alt="./gradlew clean build command result" width="500"/>
 
-When the build process is finished, you're going to execute the command `./gradlew bootRun`, and after the command is executed, your terminal must look like the following:
-
+When the build process is finished, you're going to execute the command `./gradlew bootRun`, and after the command is executed, your terminal should look similar to what is shown in the example below:
 <img src="PART-II/Images/04_02.PNG" alt="./gradlew bootRun command result" width="500"/>
 
 To fully confirm your code is successfully running, in your browser, visit the URL `localhost:8080/employees`. The final result should be this:
@@ -266,6 +270,14 @@ After a successful execution, a new `.jar` file will be generated, and the deplo
 <img src="PART-II/Images/05_02.PNG" alt="gradle-tut-res-<version>.jar file" width="500"/>
 
 ## Custom Gradle task: generateScript 
+When building an application using Gradle using the `application` plugin, it can generate distribution scripts through the `installDist` task. These scripts allow you to run the application using `gradle run`, by executing them.
+
+The custom task `generateScript` works as follow:
+- It starts to ensure itself only runs after `installDist` has completed.
+- Then, it checks the running operating system to determine which script to execute, `.bat` on Windows or a `.sh` file in Unix-based systems
+- Finally, it executes the appropriate script, shich simulates how the application would run in a production eñvironment.
+
+This is helpful for testing the packaged application before deployment. The example task you'll find below does exactly what was previously described: 
 
 ```bash
 tasks.register("generateScript", Exec){
@@ -284,9 +296,17 @@ tasks.register("generateScript", Exec){
     }
 }
 ```
+To confirm the task is working correctly, execute `./gradlew generateScript` in the terminal. The output should resemble the image shown below:
+<img src="PART-II/Images/06_01.PNG" alt="./gradlew generateScript command result" width="500"/>
+
+After a successful execution, in your browser, visit the URL `localhost:8080/employees`. The final result should be similar to this:
+<img src="PART-II/Images/06_02.PNG" alt="employees web page after running ./gradlew generateScript" width="500"/>
 
 ## Custom Gradle task: packageJavadoc
-
+Javadoc is a decomentation tool that generates HTML documentation from Java source code. It reads special Javadoc comments, and produces a structured, browsable reference for classes, methods, fields, and packages.
+When using Gradle, you can generate Javadoc for your project with the build it `javadoc` task. To package the generated documentation into a `.zip` file, you can create a custom task that depends on `javadoc`, ensuring that the documentation is generated before the archive is created.
+The example below demonstrates how to define such task:
+ 
 ```bash
 tasks.register("packageJavadoc", Zip){
     group = 'documentation'
@@ -302,8 +322,16 @@ tasks.register("packageJavadoc", Zip){
     archiveExtension = 'zip'
 }
 ```
+After creating the custom task, open your terminal and run teh command `./gradlew packageJavadoc`. The output should be similar to the one shown below:
+<img src="PART-II/Images/07_01.PNG" alt="./gradlew packageJavadoc command result" width="500"/>
+
+After successfully executing the prior command, in your building directory, inside `docs/javadoc`, you'll find the archive containing your project documentation.
+<img src="PART-II/Images/07_02.PNG" alt="Javadoc archive created after executing ./gradlew packageJavadoc" width="500"/>
 
 ## Create a new SourceSet for Integration Tests
+Creating a separate SourceSet for integration test helps organize test by purpose, keeping unit and integration tests separate. You can run them independently or as part of the build, and it ensures your application works correctly.
+
+Below, you'll find and example of a custom source set for integration testing.
 ```bash
 sourceSets {
     integrationTest {
@@ -331,7 +359,7 @@ sourceSets {
 
 tasks.register("integrationTest", Test){
     group = 'verification'
-    description = 'Runs yhe integration tests'
+    description = 'Runs the integration tests'
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -342,6 +370,163 @@ tasks.register("integrationTest", Test){
 check.dependsOn(tasks.named("integrationTest"))
 ```
 
+After implementing the previous changes to your `build.gradle`, open the terminal and run the command `./gradlew integrationTest`, the output should be similar to the example below:
+<img src="PART-II/Images/08_01.PNG" alt="./gradlew integrationTest command result" width="500"/>
+
+# Alternative technologies to Gradle (Maven not included)
+## Ant
+Created in 2000 by Apache Software Foundation, **Ant** is a Java build automation tool developed as an alternative to Unix **Make**. It was designed to simplify the complex scripts required when using Make. Like **Maven**, Ant uses XML to define builds, but unlike Maven, you must define each step of the build process explicitly.
+
+Below is an implementation of this class assignment using Ant along with **Ivy**, Ant's dependency management tool.
+
+Ivy.xml
+```bash
+<?xml version="1.0"?>
+<ivy-module version="2.0">
+    <info organisation="com.example" module="payroll" revision="1.1.0"/>
+    
+    <configurations>
+        <conf name="compile"/>
+        <conf name="runtime" extends="compile"/>
+        <conf name="test" extends="runtime"/>
+    </configurations>
+    
+    <dependencies>
+        <dependency org="com.google.guava" name="guava" rev="23.0"/>
+        <dependency org="org.springframework.boot" name="spring-boot-starter-web" rev="3.5.6"/>
+        <dependency org="org.springframework.boot" name="spring-boot-starter-hateoas" rev="3.5.6"/>
+        <dependency org="org.springframework.boot" name="spring-boot-starter-data-jpa" rev="3.5.6"/>
+        <dependency org="jakarta.persistence" name="jakarta.persistence-api" rev="3.1.0"/>
+        <dependency org="com.h2database" name="h2" rev="2.3.0" conf="runtime"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter" rev="5.11.2" conf="test"/>
+        <dependency org="org.junit.platform" name="junit-platform-launcher" rev="1.11.3" conf="test"/>
+    </dependencies>
+</ivy-module>
+
+```
+
+build.xml
+```bash
+<?xml version="1.0"?>
+<project name="payroll" default="deploy" basedir=".">
+    
+    <property name="src.dir" value="src/main/java"/>
+    <property name="resources.dir" value="src/main/resources"/>
+    <property name="build.dir" value="build"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="deployment.dir" value="${build.dir}/deployment/dev"/>
+    <property name="version" value="1.1.0"/>
+    <property name="main.class" value="payroll.PayrollApplication"/>
+    
+    <target name="init">
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${deployment.dir}"/>
+        <mkdir dir="${deployment.dir}/lib"/>
+        <mkdir dir="${build.dir}/docs"/>
+    </target>
+    
+    <taskdef name="ivy" classname="org.apache.ivy.ant.IvyResolve"/>
+    <taskdef name="ivycachepath" classname="org.apache.ivy.ant.IvyCachePath"/>
+    <taskdef name="ivypublish" classname="org.apache.ivy.ant.IvyPublish"/>
+    
+    <target name="resolveIvy">
+        <ivy:resolve file="ivy.xml"/>
+        <ivy:cachepath pathid="project.classpath"/>
+    </target>
+
+    <target name="compileApplication" depends="init, resolveIvy">
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false">
+            <classpath refid="project.classpath"/>
+        </javac>
+        <copy todir="${classes.dir}">
+            <fileset dir="${resources.dir}" includes="**/*.properties"/>
+        </copy>
+    </target>
+
+    <target name="test" depends="compileApplication">
+        <junit printsummary="on" haltonfailure="yes" fork="yes">
+            <classpath>
+                <path refid="project.classpath"/>
+                <pathelement location="${classes.dir}"/>
+            </classpath>
+
+            <formatter type="plain"/>
+
+            <batchtest>
+                <fileset dir="src/test/java">
+                    <include name="**/*Test.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="cleanDeployment">
+        <delete dir="${deployment.dir}"/>
+        <echo message="Deployment directory cleaned"/>
+    </target>
+    
+    <target name="copyJar" depends="compileApplication">
+        <jar destfile="${build.dir}/libs/payroll-${version}.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="mainClass" value="${main.class}"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <target name="copyRuntimeDependencies" depends="resolveDependencies">
+        <copy todir="${deployment.dir}/lib">
+            <path refid="runtime.classpath"/>
+        </copy>
+    </target>
+    
+    <target name="copyConfigurations">
+        <copy todir="${deployment.dir}" filtering="true">
+            <fileset dir="${resources.dir}" includes="*.properties"/>
+            <filterset>
+                <filter token="version" value="${version}"/>
+                <filter token="timestamp" value="${DSTAMP}-${TSTAMP}"/>
+            </filterset>
+        </copy>
+    </target>
+    
+    <target name="deployToDev" depends="cleanDeployment, copyJar, copyRuntimeDependencies, copyConfigurations">
+        <echo message="Application Deplyed inside ${deployment.dir}"/>
+    </target>
+
+    <target name="generateScript" depends="jar, copyRuntimeDependencies">
+        <echo file: "${build.dir}/run.sh">
+            #!/bin/bash
+            java -cp "${build.dir}/libs/payroll-${version}.jar:${deployment.dir}/lib/*" ${main.class}
+        </echo>
+        <chmod file="${build.dir}/run.sh" perm="755"/>
+    </target>
+    
+    <target name="packageJavadoc">
+        <javadoc sourcepath="${src.dir}" destdir="${build.dir}/docs/javadoc"
+                 classpathref="project.classpath" author="true" version="true"/>
+    </target>
+ 
+    <target name="integrationTest" depends="compileApplication, test">
+        <junit printsummary="on" haltonfailure="yes" fork="yes">
+            <classpath>
+                <path refid="project.classpath"/>
+                <pathelement location="${classes.dir}"/>
+                <pathelement location="build/integrationTest/classes"/>
+            </classpath>
+
+            <formatter type="plain"/>
+            
+            <batchtest>
+                <fileset dir="src/integrationTest/java">
+                    <include name="**/*IntegrationTest.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+</project>
+```
+ 
 # Self-Evaluation
 ```bash
 Daniel (1250503) - 80%
