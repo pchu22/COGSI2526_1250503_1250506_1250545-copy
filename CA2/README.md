@@ -415,6 +415,10 @@ git push origin ca2-part2 # Push the tag "ca2-part2" to the repository "COGSI252
 ```
 
 # Alternative technologies to Gradle (Maven not included)
+## Make
+Make, created in April 1976, by Stuart Feldman, is a software build automation tool that executes actions based on configured dependencies defined in a file called `makefile`. It was originally designed to compile and build executable programs from source code, bit it can also be used to automate any task that can be executed through the OS shell.
+Primarily used on Unix and Unix-like systems, Make remains widely adopted despite the emergence of many alternative build tools and IDEs that offer similar functionality.
+
 ## Ant
 Created in 2000 by Apache Software Foundation, **Ant** is a Java build automation tool developed as an alternative to Unix **Make**. It was designed to simplify the complex scripts required when using Make. Like **Maven**, Ant uses XML to define builds, but unlike Maven, you must define each step of the build process explicitly.
 
