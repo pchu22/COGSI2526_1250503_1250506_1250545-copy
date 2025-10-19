@@ -134,6 +134,7 @@ git switch Gradle-W2 # Switch from current branch ("Gradle-W1") to the "Gradle-W
 ```
 ## Move to the `links` folder and execute the application from the command line 
 In order to run the application from the command line, execute the code `../mvnw spring-boot:run`. In your command line you should see something like what is shown in the image below:
+
 <img src="PART-II/Images/02_01.PNG" alt="../mvnw spring-boot:run command result" width="500"/> 
 
 Then, in you browser enter the URL `localhost:808/employees`, and the result must be the following:
@@ -141,6 +142,7 @@ Then, in you browser enter the URL `localhost:808/employees`, and the result mus
 
 ## Build a new Gradle project and replace the App.java with `tut_rest` source code. Make sure all `build.gradle` dependencies and plugins are added to the `build.gradle` file
 Start by running the command `gradle init` on your terminal. After that, a new project is going to be created and you're going to swap your source code (Hello World) with `tut_rest` source code.
+
 <img src="PART-II/Images/03_01.PNG" alt="tut_rest files in the newly created gradle_tut_rest project" width="500"/>
 
 After doing that, you need to add all the needed dependencies and plugins to your `build.gradle`. Your build file should look something like this:
@@ -187,6 +189,7 @@ After performing these changes, in the terminal run the command `./gradlew clean
 <img src="PART-II/Images/04_01.PNG" alt="./gradlew clean build command result" width="500"/>
 
 When the build process is finished, you're going to execute the command `./gradlew bootRun`, and after the command is executed, your terminal must look like the following:
+
 <img src="PART-II/Images/04_02.PNG" alt="./gradlew bootRun command result" width="500"/>
 
 To fully confirm your code is successfully running, in your browser, visit the URL `localhost:8080/employees`. The final result should be this:
