@@ -147,6 +147,7 @@ gradle init
 ```
 This will create a new gradle project with the default settings.
 Replace the existing `App.java` with the `tut_rest` source code.
+
 <img src="PART-II/Images/03_01.PNG" alt="tut_rest files in the newly created gradle_tut_rest project" width="500"/>
 
 Update the build.gradle with the needed dependencies and plugins. Your build file should look similar to the following:
@@ -191,6 +192,7 @@ test{
 ```
 
 After performing these changes, in the terminal run the command `./gradlew clean build`. The result should resemble the image shown below:
+
 <img src="PART-II/Images/04_01.PNG" alt="./gradlew clean build command result" width="500"/>
 
 When the build process is finished, you're going to execute the command `./gradlew bootRun`, and after the command is executed, your terminal should look similar to what is shown in the example below:
@@ -198,6 +200,7 @@ When the build process is finished, you're going to execute the command `./gradl
 <img src="PART-II/Images/04_02.PNG" alt="./gradlew bootRun command result" width="500"/>
 
 To fully confirm your code is successfully running, in your browser, visit the URL `localhost:8080/employees`. The final result should be this:
+
 <img src="PART-II/Images/04_03.PNG" alt="application employees page" width="500"/>
 
 ## Custom Gradle Task: deployToDev – Automated Deployment Process
@@ -265,9 +268,11 @@ tasks.register("deployToDev"){
 ```
 
 To confirm the task is working correctly, execute `./gradlew deployToDev` in the terminal. The output should resemble the image shown below:
+
 <img src="PART-II/Images/05_01.PNG" alt="./gradlew deployToDev command result" width="500"/>
 
 After a successful execution, a new `.jar` file will be generated, and the deployment directory should contain the structure ilustrated below:
+
 <img src="PART-II/Images/05_02.PNG" alt="gradle-tut-res-<version>.jar file" width="500"/>
 
 ## Custom Gradle task: generateScript 
@@ -302,6 +307,7 @@ To confirm the task is working correctly, execute `./gradlew generateScript` in 
 <img src="PART-II/Images/06_01.PNG" alt="./gradlew generateScript command result" width="500"/>
 
 After a successful execution, in your browser, visit the URL `localhost:8080/employees`. The final result should be similar to this:
+
 <img src="PART-II/Images/06_02.PNG" alt="employees web page after running ./gradlew generateScript" width="500"/>
 
 ## Custom Gradle task: packageJavadoc
@@ -396,7 +402,9 @@ git push origin main
 
 In order to keep our repository fully organized, both branches used to complete CA2 were deleted.
 ```bash
+git branch -d Gradle-W1
 git push -d Gradle-W1
+git branch -d Gradle-W2
 git push -d Gradle-W2
 ```
 
