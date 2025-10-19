@@ -378,6 +378,34 @@ After implementing the previous changes to your `build.gradle`, open the termina
 
 <img src="PART-II/Images/08_01.PNG" alt="./gradlew integrationTest command result" width="500"/>
 
+## Merge `Gradle-W2` branch into `main` branch
+Before merging `Gradle-W2` into main it's necessary to change the working branch.
+```bash
+git switch main
+```
+After changing the working branch, we started the merging process.
+```bash
+git merge Gradle-W2 # Initiates the merge process of branch "email-field" into branch "main"
+```
+
+Git reported **Fast-Forward** since there were no merge conflicts, what means the was simply moved forward.
+Finally, we pushed the staged changes to the remote repository `COGSI2526_1250503_1250506_1250545`.
+```bash
+git push origin main
+```
+
+In order to keep our repository fully organized, both branches used to complete CA2 were deleted.
+```bash
+git push -d Gradle-W1
+git push -d Gradle-W2
+```
+
+## Add the tag `ca2-part2` to the `d3c99aa` commit
+```bash
+git tag -a ca2-part2 d3c99aa # Create the tag "ca2-part2" and add that same tag to the d3c99aa commit.
+git push origin ca2-part2 # Push the tag "ca2-part2" to the repository "COGSI2526_1250503_1250506_1250545".
+```
+
 # Alternative technologies to Gradle (Maven not included)
 ## Ant
 Created in 2000 by Apache Software Foundation, **Ant** is a Java build automation tool developed as an alternative to Unix **Make**. It was designed to simplify the complex scripts required when using Make. Like **Maven**, Ant uses XML to define builds, but unlike Maven, you must define each step of the build process explicitly.
