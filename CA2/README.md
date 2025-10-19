@@ -194,6 +194,7 @@ After performing these changes, in the terminal run the command `./gradlew clean
 <img src="PART-II/Images/04_01.PNG" alt="./gradlew clean build command result" width="500"/>
 
 When the build process is finished, you're going to execute the command `./gradlew bootRun`, and after the command is executed, your terminal should look similar to what is shown in the example below:
+
 <img src="PART-II/Images/04_02.PNG" alt="./gradlew bootRun command result" width="500"/>
 
 To fully confirm your code is successfully running, in your browser, visit the URL `localhost:8080/employees`. The final result should be this:
@@ -297,6 +298,7 @@ tasks.register("generateScript", Exec){
 }
 ```
 To confirm the task is working correctly, execute `./gradlew generateScript` in the terminal. The output should resemble the image shown below:
+
 <img src="PART-II/Images/06_01.PNG" alt="./gradlew generateScript command result" width="500"/>
 
 After a successful execution, in your browser, visit the URL `localhost:8080/employees`. The final result should be similar to this:
@@ -323,9 +325,11 @@ tasks.register("packageJavadoc", Zip){
 }
 ```
 After creating the custom task, open your terminal and run teh command `./gradlew packageJavadoc`. The output should be similar to the one shown below:
+
 <img src="PART-II/Images/07_01.PNG" alt="./gradlew packageJavadoc command result" width="500"/>
 
 After successfully executing the prior command, in your building directory, inside `docs/javadoc`, you'll find the archive containing your project documentation.
+
 <img src="PART-II/Images/07_02.PNG" alt="Javadoc archive created after executing ./gradlew packageJavadoc" width="500"/>
 
 ## Create a new SourceSet for Integration Tests
@@ -371,6 +375,7 @@ check.dependsOn(tasks.named("integrationTest"))
 ```
 
 After implementing the previous changes to your `build.gradle`, open the terminal and run the command `./gradlew integrationTest`, the output should be similar to the example below:
+
 <img src="PART-II/Images/08_01.PNG" alt="./gradlew integrationTest command result" width="500"/>
 
 # Alternative technologies to Gradle (Maven not included)
