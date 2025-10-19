@@ -125,6 +125,21 @@ To push the tag to the remote repository **COGSI2526_1250503_1250506_1250545**, 
 git push origin ca2-part1
 ```
 
+# CA2 - Build Tools (Part II)
+After downloading the `tut_rest` source code from **"https://github.com/spring-guides/tut_rest"**, create a new branch to address the second part of the Class Assignment II. The following commands were executed to create the branch and start working in it:
+```bash
+git branch Gradle-W2 # Create a new branch named "Gradle-W2".
+git branch # Verify the branches and confirm which one is active.
+git switch Gradle-W2 # Switch from current branch ("Gradle-W1") to the "Gradle-W2" branch.
+```
+## Move to the `links` folder and execute the application from the command line 
+In order to run the application from the command line, execute the code `../mvnw spring-boot:run`. In your command line you should see something like what is shown in the image below:
+<img src="PART-II/Images/02_01.PNG" alt="../mvnw spring-boot:run ommand result" width="500"/> 
+
+Then, in you browser enter the URL `localhost:808/employees`, and the result must be the following:
+<img src="PART-II/Images/02_02.PNG" alt="application employees page" width="500"/>
+
+
 # Self-Evaluation
 ```bash
 Daniel (1250503) - 80%
