@@ -134,11 +134,133 @@ git switch Gradle-W2 # Switch from current branch ("Gradle-W1") to the "Gradle-W
 ```
 ## Move to the `links` folder and execute the application from the command line 
 In order to run the application from the command line, execute the code `../mvnw spring-boot:run`. In your command line you should see something like what is shown in the image below:
-<img src="PART-II/Images/02_01.PNG" alt="../mvnw spring-boot:run ommand result" width="500"/> 
+<img src="PART-II/Images/02_01.PNG" alt="../mvnw spring-boot:run command result" width="500"/> 
 
 Then, in you browser enter the URL `localhost:808/employees`, and the result must be the following:
 <img src="PART-II/Images/02_02.PNG" alt="application employees page" width="500"/>
 
+## Build a new Gradle project and replace the App.java with `tut_rest` source code. Make sure all `build.gradle` dependencies and plugins are added to the `build.gradle` file
+Start by running the command `gradle init` on your terminal. After that, a new project is going to be created and you're going to swap your source code (Hello World) with `tut_rest` source code.
+<img src="PART-II/Images/03_01.PNG" alt="tut_rest files in the newly created gradle_tut_rest project" width="500"/>
+
+After doing that, you need to add all the needed dependencies and plugins to your `build.gradle`. Your build file should look something like this:
+```bash
+import org.apache.tools.ant.filters.ReplaceTokens
+
+// Apply the java plugin to add support for Java
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+version = '1.1.0'
+
+// In this section you declare where to find the dependencies of your project
+repositories {
+    // Use jcenter for resolving your dependencies.
+    // You can declare any Maven/Ivy/file repository here.
+    mavenCentral()
+}
+
+dependencies {
+    // This dependency is found on compile classpath of this component and consumers.
+    implementation 'com.google.guava:guava:23.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-hateoas'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'jakarta.persistence:jakarta.persistence-api'
+
+
+    // Use JUnit test framework
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    runtimeOnly 'com.h2database:h2'
+}
+
+test{
+    useJUnitPlatform()
+}
+```
+After performing these changes, in the terminal run the command `./gradlew clean build`. The result should look like this:
+<img src="PART-II/Images/04_01.PNG" alt="./gradlew clean build command result" width="500"/>
+
+When the build process is finished, you're going to execute the command `./gradlew bootRun`, and after the command is executed, your terminal must look like the following:
+<img src="PART-II/Images/04_02.PNG" alt="./gradlew bootRun command result" width="500"/>
+
+To fully confirm your code is successfully running, in your browser, visit the URL `localhost:8080/employees`. The final result should be this:
+<img src="PART-II/Images/04_03.PNG" alt="application employees page" width="500"/>
+
+## Custom Gradle Task: deployToDev – Automated Deployment Process
+This task can be developed either in a single block of code, or be splitted in smaller tasks. We opted for develop this task with modularity in mind, and in order to achieve that goal, we developed **four** tasks - cleanDeployment, copyJar, copyRuntimeDependencies, and copyConfigurations. You can find this tasks code below.
+
+```bash
+tasks.register("cleanDeployment", Delete){
+    group = 'deployment'
+    description = 'Deletes the deployment directory for dev environment'
+
+    delete layout.buildDirectory.dir("deployment/dev")
+}
+```
+
+```bash
+tasks.register("copyJar", Copy){
+    group = 'deployment'
+    description = 'Copies the built jar into the deployment directory'
+    dependsOn tasks.named("build")
+
+    from layout.buildDirectory.dir("libs/${project.name}-${project.version}.jar")
+    into layout.buildDirectory.dir("deployment/dev")
+}
+```
+
+```bash
+tasks.register("copyRuntimeDependencies", Copy){
+    group = 'deployment'
+    description = 'Copies runtime dependencies into the deployment directory'
+    dependsOn tasks.named("build")
+
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir("deployment/dev/lib")
+}
+```
+
+```bash
+tasks.register("copyConfigurations", Copy){
+    group = 'deployment'
+    description = 'Copies configurations (and replaces tokens) into the deployment directory'
+    dependsOn tasks.named("build")
+
+    from ('src/main/resources/*.properties') {
+        filter(ReplaceTokens, tokens: [
+                timestamps: new Date().format('dd-MM-yyyy HH:mm:ss'),
+                version   : project.version
+        ])
+    }
+    into layout.buildDirectory.dir("deployment/dev")
+}
+```
+
+If you decide to pursue a modular approach, just like us, your final `deployToDev` task code should be similar to the following:
+```bash
+tasks.register("deployToDev"){
+    group = 'deployment'
+    description = 'Deploys the dev build with JARs and comfigurations'
+
+    dependsOn tasks.named("build")
+    dependsOn tasks.named("cleanDeployment")
+    dependsOn tasks.named("copyJar")
+    dependsOn tasks.named("copyRuntimeDependencies")
+    dependsOn tasks.named("copyConfigurations")
+}
+```
+
+To confirm the task is fully operational, in the terminal, run `./gradlew deployToDev`. The result must be similar to this one: 
+<img src="PART-II/Images/05_01.PNG" alt="./gradlew deployToDev command result" width="500"/>
+
+A new .jar file will be created and inside the deployment directory you must have this:
+<img src="PART-II/Images/05_02.PNG" alt="gradle-tut-res-<version>.jar file" width="500"/>
 
 # Self-Evaluation
 ```bash
