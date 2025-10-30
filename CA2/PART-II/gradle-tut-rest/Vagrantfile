@@ -91,7 +91,7 @@ Vagrant.configure("2") do |config|
         sudo chown -R vagrant:vagrant .
 
         echo "============================="
-        echo " Starting Server..."
+        echo " Starting Server..."git 
         echo "============================="
         cd $APP_DIR
         echo "-> Inside directory $APP_ROOT_DIR/$APP_DIR..."
