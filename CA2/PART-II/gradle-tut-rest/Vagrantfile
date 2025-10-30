@@ -27,7 +27,22 @@ Vagrant.configure("2") do |config|
   # your network.
   # config.vm.network "public_network"
 
-    config.vm.provision "shell", inline: <<-SHELL
+    config.vm.provision "file", source: "C:/Users/pmdc2/.ssh/id_ed25519", destination: "/home/vagrant/.ssh/id_ed25519"
+
+    config.vm.provision "shell",
+    privileged: false,
+    inline: <<-SHELL
+        APP_ROOT_DIR=COGSI2526_1250503_1250506_1250545
+        APP_DIR=CA2/PART-II/gradle-tut-rest/
+
+        GH_USERNAME=pchu22
+        echo "GitHub username: $GH_USERNAME"
+
+        GH_REPO=COGSI2526_1250503_1250506_1250545
+        echo "GitHub repository: $GH_REPO"
+
+        REPO_URL=git@github.com:$GH_USERNAME/$GH_REPO
+
         echo "============================="
         echo " Updating system packages..."
         echo "============================="
@@ -48,5 +63,41 @@ Vagrant.configure("2") do |config|
         echo "============================="
         java -version
         git --version
+
+        echo "============================="
+        echo " Cloning data from $REPO_URL..."
+        echo "============================="
+        if [ ! -d "$APP_ROOT_DIR/.git" ]; then
+            echo "-> Changing .ssh directory owner and permissions..."
+            sudo chown vagrant:vagrant /home/vagrant/.ssh
+            sudo chmod 700 /home/vagrant/.ssh
+            sudo chown vagrant:vagrant /home/vagrant/.ssh
+            sudo chmod 600 /home/vagrant/.ssh/id_ed25519
+            git clone $REPO_URL
+        else
+            echo "-> Repository already exists. Skipping clone..."
+        fi
+
+        echo "============================="
+        echo " Pulling data from the repository..."
+        echo "============================="
+        cd $APP_ROOT_DIR
+        echo "-> Inside directory $APP_ROOT_DIR..."
+        echo "-> Switching to main branch..."
+        git switch main
+        git pull $REPO_URL
+
+        echo "-> Changing $APP_ROOT_DIR owner to vagrant..."
+        sudo chown -R vagrant:vagrant .
+
+        echo "============================="
+        echo " Starting Server..."
+        echo "============================="
+        cd $APP_DIR
+        echo "-> Inside directory $APP_ROOT_DIR/$APP_DIR..."
+        echo "-> Changing gradlew permissions..."
+        sudo chmod 744 gradlew gradlew.bat
+        echo "-> Running Server..."
+        ./gradlew bootRun
     SHELL
 end
