@@ -5,12 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e68b77ef-c1d0-4300-85ff-c8ff3add2cbf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/Vagrantfile" beforeDir="false" afterPath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/Vagrantfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
