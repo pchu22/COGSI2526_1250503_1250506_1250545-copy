@@ -744,10 +744,267 @@ To mark the completion of the second (and last) part of the CA3, create the tag 
 `git tag -a ca3-part2 647ac44`. The `-a` flag stages the tag to the `647ac44` commit. To push the tag to the remote
 repository `COGSI2526_1250503_1250506_1250545`, the command `git push origin ca3-part2` was executed.
 
-# Alternative technologies to Vagrant (Docker not included)
-## Multipass + Cloud init
+## Branch management for the development of the CA3 solution 
+To develop the current solution, we began by creating a new branch named `Vagrant`, next we proceeded by checking 
+the existing branches, and ultimately switched to the newly created branch. Execute the subsequent commands to achieve 
+a similar result to what we accomplished.
+```bash
+git branch Vagrant
+git branch
+git switch Vagrant
+```
 
-## Terraform + Packer
+Once we completed all the CA3 tasks, we deleted the `Vagrant` branch both locally and remotely, using the following 
+commands:
+```bash
+git branch -d Vagrant
+git push -d origin Vagrant
+```
+
+# Alternative technologies to Vagrant (Docker not included)
+## Multipass + cloud init
+Multipass is a lightweight VM manager for Linux, Windows and macOS. It's designed for developers who want to spin up a 
+fresh Ubuntu environment with a single command. It uses KVM on Linux, Hyper-V on Windows and QEMU on macOS to run 
+virtual machines with minimal overhead. It can also use VirtualBox on Windows and macOS. Multipass will fetch Ubuntu 
+images for you and keep them up to date.
+
+Cloud-init is an open-source initialization tool designed to automate the setup and configuration of Linux-based cloud 
+instances during their first boot. It acts as a standard method for early-stage initialization across major public cloud 
+providers, private cloud infrastructure, and bare-metal installations.
+
+Cloud-init integrates with Multipass to automate the setup of VMs. When launching a VM with Multipass, user-data can be 
+passed using the `--cloud-init` flag followed by a YAML file containing the configuration. This file defines settings 
+such as users, packages to install, SSH keys, and system configurations. Multipass validates the user-data configuration 
+before starting the VM, ensuring it adheres to the cloud-config format. 
+
+The upcoming sections will guide you on how to manage a multi-machine system utilizing Multipass and cloud init in 
+conjunction. Utilize the following commands and `.yaml` files as a guide.
+
+### web-app
+Prior to configuring the `.yaml` file you're going to execute the following command in order to create the web-app 
+VM with 2 CPU cores, 1 GB of RAM and Ubuntu 20.04 operating system.
+
+```bash
+multipass launch \
+  --name web-app \
+  --cpus 2 \
+  --mem 1024M \
+  --cloud-init web-app.yaml \
+  ubuntu:20.04
+```
+
+**web-app.yaml**:
+```yaml
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp: no
+      addresses: [192.168.33.10/24]
+      nameservers: [8.8.8.8, 8.8.4.4]
+ 
+packages:
+  - git
+  - openjdk-17.jdk
+  - netcat
+    
+write-file:
+  - path: /home/ubuntu/.ssh/id_ed25519
+    permissions: '0600'
+    owner: vagrant:vagrant
+    content: |
+      -----BEGIN OPENSSH PRIVATE KEY-----
+      b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABDlDzkLw/
+      WdIDuyDK6YmtjfAAAAGAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIJbOpzFr2oU2Jbbu
+      vw/Z7IiOaY+cOhLbUNm+5c2PCp9PAAAAoBGALJQpBOfAlgecU4O27kbZSueGXuiANz6bXR
+      ufJg6aob33DCfjhM6Rk3j6BVNXVo4EzIHTtdHY+Hup/sCYw9YcSBN7ywt9F/LHTz1KZBki
+      hnYXOc4XYyqRZhLwzcOJZUui6+OF3zIfuJlu2yXBZJRvtT9Ailqyuy+Bpapt0yOpfojlqR
+      w/7qP6AK2r0BI97ljHNlg07E3fML0WQBu/i9o=
+      -----END OPENSSH PRIVATE KEY-----
+
+  - path: /home/ubuntu/.ssh/
+    permissions: '0600'
+    owner: vagrant:vagrant
+    content: |
+      ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCx7+La7D18vAUG/St7S3ApItstXSzGOB
+      gK+EmdZpW9+yYFVbHPK25Mqn9dXtyC7JCmaCOKfKCQE+D2zRajLU48gccv9oHhRPydmjjY
+      1dw0UYa7g059MBv+kyxURoPHMopGITPuXWK2XPtzaBLJj/VhQisSbTFNZXFKqDP+gfyhtm
+      ksbOSK0RkGxTaL8vysR033f63Ryx8TnXrnHB384MyajSfqGoDGLsg7hQrca9IVqT0YIOAp
+      uzXICkt42NkdAHhEB4yf0ALVpuGdunSyf+bKZIupOHruob4hmdkfsB4EfPedeMmdmujPVF
+      7PGQE/bRqvktDa9A7Lw2pPPQhrkkLf pmdc2@DESKTOP-SDTA0AS
+  
+runcmd:
+  - |
+    APP_ROOT_DIR=COGSI2526_1250503_1250506_1250545
+    APP_DIR=CA2/PART-II/gradle-tut-rest/
+
+    GH_USERNAME=pchu22
+    echo "GitHub username: $GH_USERNAME"
+
+    GH_REPO=COGSI2526_1250503_1250506_1250545
+    echo "GitHub repository: $GH_REPO"
+
+    REPO_URL=git@github.com:$GH_USERNAME/$GH_REPO
+
+    echo "============================="
+    echo " Updating system packages..."
+    echo "============================="
+    sudo apt-get update -y
+
+    echo "============================="
+    echo " Cloning data from $REPO_URL..."
+    echo "============================="
+    if [ ! -d "$APP_ROOT_DIR/.git" ]; then
+        echo "-> Changing .ssh directory owner and permissions..."
+        sudo chown vagrant:vagrant /home/vagrant/.ssh
+        sudo chmod 700 /home/vagrant/.ssh
+        git clone $REPO_URL
+    else
+        echo "-> Repository already exists. Skipping clone..."
+    fi
+
+    echo "============================="
+    echo " Pulling data from the repository..."
+    echo "============================="
+    cd $APP_ROOT_DIR
+    echo "-> Inside directory $APP_ROOT_DIR..."
+    echo "-> Switching to main branch..."
+    git switch main
+    git pull $REPO_URL
+
+    echo "-> Changing $APP_ROOT_DIR owner to vagrant..."
+    sudo chown -R vagrant:vagrant .
+
+    echo "============================="
+    echo " Starting Server..."
+    echo "============================="
+    cd $APP_DIR
+    echo "-> Inside directory $APP_ROOT_DIR/$APP_DIR..."
+    echo "-> Changing gradlew permissions..."
+    sudo chmod 744 gradlew gradlew.bat
+    echo "-> Waiting for H2 database on 192.168.0.11:9092..."
+    until nc -z 192.168.33.11 9092; do
+        echo "-> DB not ready yet, waiting..."
+        sleep 2
+    done
+    echo "-> Running Server..."
+    ./gradlew bootRun --args='--server.address=0.0.0.0 --server.port=8080'
+
+```
+
+To better understand how Multipass and cloud init work, we are going to explain the thought process behind developing 
+the `web-app.yaml` file. We started by launching the Multipass instance with the previously described specifications to 
+ensure a consistent and reproducible environment.
+
+Next, we defined the network configuration inside the `network` snippet of the `.yaml` file, assigning a static IP 
+address and DNS servers to the `web-app` VM. In the `packages` section, we listed the packages that should be 
+automatically installed on the guest machine upon initialization. Under the `write-file` section, we included the 
+private SSH key to access the remote GitHub repository (`COGSI2526_1250503_1250506_1250545`) and the custom private key 
+used access the VM via SSH.
+
+Finally, in the `runcmd` section, we executed a shell script similar to the one utilized in the web-app's `Vagrantfile`,
+but without the permission-setting commands for the SSH key, as cloud-init already handles file permissions defined in 
+`write_files`.
+
+**NOTE**: Since Multipass does not natively support a `private_network` configuration like vagrant, we assigned the 
+machine a **static IP address** using the network configuration. When executing the service with `./gradlew bootRun`, we 
+passed the arguments `--args='--server.addres=0.0.0.0 --server.port=8080'` to ensure the application binds to all the 
+network interfaces and listens on port 8080. This allows the service to be accessed from host machine using the VM’s 
+static IP address on port 8080.
+
+### db-server
+Prior to configuring the `.yaml` file you're going to execute the following command in order to create the db-server
+VM with 2 CPU cores, 1 GB of RAM and Ubuntu 20.04 operating system.
+
+```bash
+multipass launch \
+  --name db-server \
+  --cpus 2 \
+  --mem 1024M \
+  --cloud-init db-server.yaml \
+  ubuntu:20.04
+```
+
+Run the subsequent command to upload the database `.jar` file to the db-server VM:
+
+```bash
+multipass transfer C:/Users/pmdc2/.gradle/caches/modules-2/files-2.1/com.h2database/h2/2.3.232/4fcc05d966ccdb2812ae8b9a718f69226c0cf4e2/h2-2.3.232.jar dn-server:/home/vagrant/libs/h2-2.3.232.jar
+```
+
+**bd-server.yaml**:
+```yaml
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp: no
+      addresses: [192.168.33.11/24]
+      nameservers: [8.8.8.8, 8.8.4.4]
+
+packages:
+  - netcat
+
+write-file:
+  - path: /home/ubuntu/.ssh/
+    permissions: '0600'
+    owner: vagrant:vagrant
+    content: |
+      ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDWntgUW6dpDiA7is3JOAUq/E3zy5ZVEt
+      rnyNmKm4cHkav50ChXe/oHMC8DHduePhfo8gBA2VKoiWumPDX7VOCdDAMQKqnOATJggw74
+      fHZ5JIx52ZaA/TuNNwhuSx5XGaIt+DpnzjPym3SG5YXWaSiFodUw5WU1AnOHx8avGlGadv
+      dZzCjZ+RMNFHqkZda9nFroHB3B7ux0lnrx7OulQ2TOX/2L9EdeOMtW5YjL4HTe7LsgmkL8
+      NHjDnWmyPzd4hNWH67xXGzu/acxwV1DbN8bZqBoSUeLvs7QANYqWrfVA8Rw9sz7ODuMCj0
+      pnMNlSMg3Yfu8MgyBEIncJ475LcFSH pmdc2@DESKTOP-SDTA0AS
+      
+runcmd:
+  - |
+    echo "============================="
+    echo " Updating system packages..."
+    echo "============================="
+    sudo apt-get update -y
+
+    echo "============================="
+    echo " Adding FW Rules..."
+    echo "============================="
+    echo "-> Blocking incoming traffic..."
+    sudo ufw default deny incoming
+    echo "-> Allowing outgoing traffic..."
+    sudo ufw default allow outgoing
+    echo "-> Allowing SSH on port 22..."
+    sudo ufw allow 22
+    echo "-> Allowing TCP from 192.168.33.10 on por 9092..."
+    sudo ufw allow from 192.168.33.10 to any port 9092 proto tcp
+
+    echo "============================="
+    echo " Starting the DB..."
+    echo "============================="
+    mkdir -p /home/vagrant/logs/h2
+    java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server \
+        -tcp -tcpAllowOthers -tcpPort 9092 -web -webAllowOthers > /home/vagrant/logs/h2/h2.log 2>&1 &
+```
+
+To better understand how Multipass and cloud init work, we are going to explain the thought process behind developing
+the `db-server.yaml` file. We started by launching the Multipass instance with the previously described specifications 
+to ensure a consistent and reproducible environment.
+
+Next, we defined the network configuration inside the `network` snippet of the `.yaml` file, assigning a static IP
+address and DNS servers to the `db-server` VM. In the `packages` section, we listed the package that should be
+automatically installed on the guest machine upon initialization. Under the `write-file` section, we included the
+the custom private key used access the VM via SSH.
+
+Finally, in the `runcmd` section, we executed a shell script similar to the one utilized in the web-app's `Vagrantfile`,
+but without the permission-setting commands for the SSH key, as cloud-init already handles file permissions defined in
+`write_files`.
+
+## Terraform 
+Terraform is an infrastructure as code tool that lets you define both cloud and on-prem resources in human-readable 
+configuration files that you can version, reuse, and share. You can then use a consistent workflow to provision and 
+manage all of your infrastructure throughout its lifecycle. Terraform can manage low-level components like compute, 
+storage, and networking resources, as well as high-level components like DNS entries and SaaS features.
+
+Since Terraform is an Infrastructure orchestrator and not a full provisioning tool, it is best used in conjunction with 
+a provisioning or image-building system such as **cloud init**, **packer** or **configuration management tools** 
+(e.g, Ansible).
 
 # Self-Evaluation
 ```bash
