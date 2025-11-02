@@ -74,7 +74,7 @@ Vagrant.configure("2") do |config|
             cd $APP_ROOT_DIR
             echo "-> Inside directory $APP_ROOT_DIR..."
             echo "-> Switching to main branch..."
-            git switch Vagrant
+            git switch main
             git pull $REPO_URL
 
             echo "-> Changing $APP_ROOT_DIR owner to vagrant..."
@@ -110,7 +110,6 @@ Vagrant.configure("2") do |config|
         db.ssh.private_key_path = ["~/.ssh/vagrant_db_rsa", "~/.vagrant.d/insecure_private_key"]
 
         db.vm.provision "file", source: "~/.ssh/vagrant_db_rsa.pub", destination: "~/.ssh/authorized_keys"
-        db.vm.provision "file", source: "C:/Users/pmdc2/.ssh/id_ed25519", destination: "/home/vagrant/.ssh/id_ed25519"
         db.vm.provision "file", source: "C:/Users/pmdc2/.gradle/caches/modules-2/files-2.1/com.h2database/h2/2.3.232/4fcc05d966ccdb2812ae8b9a718f69226c0cf4e2/h2-2.3.232.jar", destination: "/home/vagrant/libs/h2-2.3.232.jar"
         db.vm.provision "shell", inline: <<-SHELL
             echo "============================="

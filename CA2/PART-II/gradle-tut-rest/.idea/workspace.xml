@@ -5,30 +5,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e68b77ef-c1d0-4300-85ff-c8ff3add2cbf" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/action_cloud_init" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/action_provision" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/action_set_name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/box_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/creator_uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/disk_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/id" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/index_uuid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/private_key" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/synced_folders" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../PART-I/gradle_basic_demo/.vagrant/machines/default/virtualbox/vagrant_cwd" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/action_cloud_init" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/action_provision" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/action_set_name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/box_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/creator_uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/disk_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/id" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/index_uuid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/private_key" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/synced_folders" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/default/virtualbox/vagrant_cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/action_cloud_init" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/action_provision" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/action_set_name" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/box_meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/creator_uid" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/disk_meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/id" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/index_uuid" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/synced_folders" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/vagrant_cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/action_cloud_init" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/action_provision" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/action_set_name" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/box_meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/creator_uid" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/disk_meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/id" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/index_uuid" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/synced_folders" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/vagrant_cwd" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Vagrantfile" beforeDir="false" afterPath="$PROJECT_DIR$/Vagrantfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../CA3/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../../CA3/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,6 +54,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
   </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
 }</component>
@@ -68,7 +70,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "Vagrant",
+    "git-widget-placeholder": "main",
     "last_opened_file_path": "C:/MCS/COGSI/CA2/PART-I/gradle_basic_demo",
     "settings.editor.selected.configurable": "reference.settingsdialog.project.gradle"
   }
