@@ -739,9 +739,9 @@ file, which contains the H2 Database service that has been imported through prov
 `db.vm.provision "file", source: "C:/Users/pmdc2/.gradle/caches/modules-2/files-2.1/com.h2database/h2/2.3.232/4fcc05d966ccdb2812ae8b9a718f69226c0cf4e2/h2-2.3.232.jar", 
 destination: "/home/vagrant/libs/h2-2.3.232.jar"`. 
 
-## Add a new tag, to mark commit 647ac44, as last of the second part of CA3
+## Add a new tag, to mark commit 0b0b478, as last of the second part of CA3
 To mark the completion of the second (and last) part of the CA3, create the tag `ca3-part2` using the command
-`git tag -a ca3-part2 647ac44`. The `-a` flag stages the tag to the `647ac44` commit. To push the tag to the remote
+`git tag -a ca3-part2 0b0b478`. The `-a` flag stages the tag to the `0b0b478` commit. To push the tag to the remote
 repository `COGSI2526_1250503_1250506_1250545`, the command `git push origin ca3-part2` was executed.
 
 ## Branch management for the development of the CA3 solution 
