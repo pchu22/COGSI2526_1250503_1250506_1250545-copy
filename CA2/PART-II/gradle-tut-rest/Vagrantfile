@@ -12,92 +12,20 @@ Vagrant.configure("2") do |config|
             vb.cpus = 2
         end
 
-        web.vm.network "private_network", ip: "192.168.33.10"
+        web.vm.network "private_network", ip: "192.168.56.10"
         web.vm.network "forwarded_port", guest: 8080, host: 8080
 
-        web.ssh.private_key_path = ["~/.ssh/vagrant_web-app_rsa", "~/.vagrant.d/insecure_private_key"]
-
-        web.vm.provision "file", source: "~/.ssh/vagrant_web-app_rsa.pub", destination: "~/.ssh/authorized_keys"
-        web.vm.provision "file", source: "C:/Users/pmdc2/.ssh/id_ed25519", destination: "/home/vagrant/.ssh/id_ed25519"
-        web.vm.provision "shell",
-        privileged: false,
-        inline: <<-SHELL
-            APP_ROOT_DIR=COGSI2526_1250503_1250506_1250545
-            APP_DIR=CA2/PART-II/gradle-tut-rest/
-
-            GH_USERNAME=pchu22
-            echo "GitHub username: $GH_USERNAME"
-
-            GH_REPO=COGSI2526_1250503_1250506_1250545
-            echo "GitHub repository: $GH_REPO"
-
-            REPO_URL=git@github.com:$GH_USERNAME/$GH_REPO
-
-            echo "============================="
-            echo " Updating system packages..."
-            echo "============================="
-            sudo apt-get update -y
-
-            echo "============================="
-            echo " Installing Git..."
-            echo "============================="
-            sudo apt-get install git -y
-
-            echo "============================="
-            echo " Installing JDK..."
-            echo "============================="
-            sudo apt-get install openjdk-17-jdk -y
-
-            echo "============================="
-            echo " Installation Complete..."
-            echo "============================="
-            java -version
-            git --version
-
-            echo "============================="
-            echo " Cloning data from $REPO_URL..."
-            echo "============================="
-            if [ ! -d "$APP_ROOT_DIR/.git" ]; then
-                echo "-> Changing .ssh directory owner and permissions..."
-                sudo chown vagrant:vagrant /home/vagrant/.ssh
-                sudo chmod 700 /home/vagrant/.ssh
-                sudo chown vagrant:vagrant /home/vagrant/.ssh
-                sudo chmod 600 /home/vagrant/.ssh/id_ed25519
-                git clone $REPO_URL
-            else
-                echo "-> Repository already exists. Skipping clone..."
-            fi
-
-            echo "============================="
-            echo " Pulling data from the repository..."
-            echo "============================="
-            cd $APP_ROOT_DIR
-            echo "-> Inside directory $APP_ROOT_DIR..."
-            echo "-> Switching to main branch..."
-            git switch main
-            git pull $REPO_URL
-
-            echo "-> Changing $APP_ROOT_DIR owner to vagrant..."
-            sudo chown -R vagrant:vagrant .
-
-            echo "============================="
-            echo " Starting Server..."
-            echo "============================="
-            cd $APP_DIR
-            echo "-> Inside directory $APP_ROOT_DIR/$APP_DIR..."
-            echo "-> Changing gradlew permissions..."
-            sudo chmod 744 gradlew gradlew.bat
-            echo "-> Waiting for H2 database on 192.168.0.11:9092..."
-            until nc -z 192.168.33.11 9092; do
-                echo "-> DB not ready yet, waiting..."
-                sleep 2
-            done
-            echo "-> Running Server..."
-            ./gradlew bootRun
-        SHELL
+#         web.ssh.private_key_path = ["~/.ssh/vagrant_web-app_rsa", "~/.vagrant.d/insecure_private_key"]
+#
+#         web.vm.provision "file", source: "~/.ssh/vagrant_web-app_rsa.pub", destination: "~/.ssh/authorized_keys"
+        web.vm.provision "file", source: "/mnt/c/Users/pmdc2/.ssh/id_ed25519", destination: "/home/vagrant/.ssh/id_ed25519"
+        web.vm.provision "ansible" do |ansible|
+            ansible.playbook = "./playbook.yaml"
+            ansible.compatibility_mode = "2.0"
+        end
     end
 
-    config.vm.define "db" do |db|
+    config.vm.define "db-server" do |db|
 
         db.vm.provider "virtualbox" do |vb|
             vb.name = "db-server"
@@ -105,52 +33,15 @@ Vagrant.configure("2") do |config|
             vb.cpus = 2
         end
 
-        db.vm.network "private_network", ip: "192.168.33.11"
+        db.vm.network "private_network", ip: "192.168.56.11"
 
-        db.ssh.private_key_path = ["~/.ssh/vagrant_db_rsa", "~/.vagrant.d/insecure_private_key"]
-
-        db.vm.provision "file", source: "~/.ssh/vagrant_db_rsa.pub", destination: "~/.ssh/authorized_keys"
-        db.vm.provision "file", source: "C:/Users/pmdc2/.gradle/caches/modules-2/files-2.1/com.h2database/h2/2.3.232/4fcc05d966ccdb2812ae8b9a718f69226c0cf4e2/h2-2.3.232.jar", destination: "/home/vagrant/libs/h2-2.3.232.jar"
-        db.vm.provision "shell", inline: <<-SHELL
-            echo "============================="
-            echo " Updating system packages..."
-            echo "============================="
-            sudo apt-get update -y
-
-            echo "============================="
-            echo " Installing Git..."
-            echo "============================="
-            sudo apt-get install git -y
-
-            echo "============================="
-            echo " Installing JDK..."
-            echo "============================="
-            sudo apt-get install openjdk-17-jdk -y
-
-            echo "============================="
-            echo " Installation Complete..."
-            echo "============================="
-            java -version
-            git --version
-
-            echo "============================="
-            echo " Adding FW Rules..."
-            echo "============================="
-            echo "-> Blocking incoming traffic..."
-            sudo ufw default deny incoming
-            echo "-> Allowing outgoing traffic..."
-            sudo ufw default allow outgoing
-            echo "-> Allowing SSH on port 22..."
-            sudo ufw allow 22
-            echo "-> Allowing TCP from 192.168.33.10 on por 9092..."
-            sudo ufw allow from 192.168.33.10 to any port 9092 proto tcp
-
-            echo "============================="
-            echo " Starting the DB..."
-            echo "============================="
-            mkdir -p /home/vagrant/logs/h2
-            java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server \
-                -tcp -tcpAllowOthers -tcpPort 9092 -web -webAllowOthers > /home/vagrant/logs/h2/h2.log 2>&1 &
-        SHELL
+#         db.ssh.private_key_path = ["~/.ssh/vagrant_db_rsa", "~/.vagrant.d/insecure_private_key"]
+#
+#         db.vm.provision "file", source: "~/.ssh/vagrant_db_rsa.pub", destination: "~/.ssh/authorized_keys"
+#         db.vm.provision "file", source: "/mnt/c/Users/pmdc2/.gradle/caches/modules-2/files-2.1/com.h2database/h2/2.3.232/4fcc05d966ccdb2812ae8b9a718f69226c0cf4e2/h2-2.3.232.jar", destination: "/home/vagrant/libs/h2-2.3.232.jar"
+        db.vm.provision "ansible" do |ansible|
+            ansible.playbook = "./playbook.yaml"
+            ansible.compatibility_mode = "2.0"
+        end
     end
 end

@@ -1,0 +1,49 @@
+---
+- name: Provision web-app VM
+  hosts: web-app
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      apt:
+        name: default-jre
+        state: present
+
+#    - name: Clone a private Git repository
+#      git:
+#        repo: git@github.com:pchu22/COGSI2526_1250503_1250506_1250545.git
+#        dest: /home/vagrant
+#        accept_hostkey: yes
+#        key_file: /home/vagrant/.ssh/id_ed25519
+
+- name: Provision db-server VM
+  hosts: db-server
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      package:
+        name: default-jre
+        state: present
