@@ -1,32 +1,4 @@
 ---
-- name: Provision web-app VM
-  hosts: web-app
-  become: true
-  become_method: sudo
-  tasks:
-    - name: Update apt cache
-      become: true
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Install Git
-      package:
-        name: git
-        state: present
-
-    - name: Install Java
-      apt:
-        name: default-jre
-        state: present
-
-#    - name: Clone a private Git repository
-#      git:
-#        repo: git@github.com:pchu22/COGSI2526_1250503_1250506_1250545.git
-#        dest: /home/vagrant
-#        accept_hostkey: yes
-#        key_file: /home/vagrant/.ssh/id_ed25519
-
 - name: Provision db-server VM
   hosts: db-server
   become: true
@@ -47,3 +19,119 @@
       package:
         name: default-jre
         state: present
+
+    - name: Install JDK
+      package:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Ensure UFW is installed
+      package:
+        name: ufw
+        state: present
+
+    - name: Deny incoming
+      ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Allow outgoing
+      ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Allow SSH on port 22
+      ufw:
+        rule: allow
+        port: 22
+        proto: tcp
+
+    - name: Allow incoming form 192.168.56.10:9092 via TCP
+      ufw:
+        rule: allow
+        port: 9092
+        proto: tcp
+        from_ip: 192.168.56.10
+
+    - name: Ensure UFW is running
+      ufw:
+        state: enabled
+
+    - name: Run H2 Database
+      shell: |
+        nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -web -webAllowOthers -baseDir /home/vagrant/libs &
+      args:
+        chdir: /home/vagrant/libs/
+      async: 0
+      poll: 0
+
+- name: Provision web-app VM
+  hosts: web-app
+  become: true
+  tasks:
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      apt:
+        name: default-jre
+        state: present
+
+    - name: Install JDK
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Clone the Git repository
+      git:
+        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        version: main
+        update: no
+      register: git_clone
+      ignore_errors: yes
+
+    - name: Pull from the Git repository
+      git:
+        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        version: main
+        update: yes
+        force: yes
+      when: git_clone is not changed or git_clone is skipped
+
+    - name: Ensure project directory has the right ownership
+      file:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        owner: vagrant
+        group: vagrant
+
+    - name: Ensure gradlew has correct permissions
+      file:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/gradlew
+        owner: vagrant
+        group: vagrant
+        mode: '0744'
+
+    - name: Wait for DB to be ready
+      wait_for:
+        host: 192.168.56.11
+        port: 9092
+        timeout: 180
+        state: started
+
+    - name: Run Spring Boot Rest Application
+      shell: |
+        ./gradlew bootRun
+      args:
+        chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
+      async: 0
+      poll: 0

@@ -15,10 +15,6 @@ Vagrant.configure("2") do |config|
         web.vm.network "private_network", ip: "192.168.56.10"
         web.vm.network "forwarded_port", guest: 8080, host: 8080
 
-#         web.ssh.private_key_path = ["~/.ssh/vagrant_web-app_rsa", "~/.vagrant.d/insecure_private_key"]
-#
-#         web.vm.provision "file", source: "~/.ssh/vagrant_web-app_rsa.pub", destination: "~/.ssh/authorized_keys"
-        web.vm.provision "file", source: "/mnt/c/Users/pmdc2/.ssh/id_ed25519", destination: "/home/vagrant/.ssh/id_ed25519"
         web.vm.provision "ansible" do |ansible|
             ansible.playbook = "./playbook.yaml"
             ansible.compatibility_mode = "2.0"
@@ -35,10 +31,8 @@ Vagrant.configure("2") do |config|
 
         db.vm.network "private_network", ip: "192.168.56.11"
 
-#         db.ssh.private_key_path = ["~/.ssh/vagrant_db_rsa", "~/.vagrant.d/insecure_private_key"]
-#
-#         db.vm.provision "file", source: "~/.ssh/vagrant_db_rsa.pub", destination: "~/.ssh/authorized_keys"
 #         db.vm.provision "file", source: "/mnt/c/Users/pmdc2/.gradle/caches/modules-2/files-2.1/com.h2database/h2/2.3.232/4fcc05d966ccdb2812ae8b9a718f69226c0cf4e2/h2-2.3.232.jar", destination: "/home/vagrant/libs/h2-2.3.232.jar"
+        db.vm.provision "file", source: "/mnt/c/MCS/COGSI/CA2/PART-II/gradle-tut-rest/CA2-Part2/PayrollDB.mv.db", destination: "/home/vagrant/"
         db.vm.provision "ansible" do |ansible|
             ansible.playbook = "./playbook.yaml"
             ansible.compatibility_mode = "2.0"
