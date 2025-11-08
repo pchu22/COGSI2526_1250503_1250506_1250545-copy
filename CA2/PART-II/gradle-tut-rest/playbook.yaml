@@ -59,11 +59,10 @@
 
     - name: Run H2 Database
       shell: |
-        nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -web -webAllowOthers -baseDir /home/vagrant/libs &
+        nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -baseDir /home/vagrant
       args:
-        chdir: /home/vagrant/libs/
-      async: 0
-      poll: 0
+        chdir: /home/vagrant
+
 
 - name: Provision web-app VM
   hosts: web-app
@@ -133,5 +132,3 @@
         ./gradlew bootRun
       args:
         chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
-      async: 0
-      poll: 0
