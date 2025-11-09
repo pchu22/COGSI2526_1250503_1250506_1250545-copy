@@ -57,6 +57,46 @@
         line: "pam_faillock.so audit deny=5 unlock_time=600"
         state: present
 
+    - name: Ensure group 'developers' exists
+      group:
+        name: developers
+        state: present
+
+    - name: Create the user 'devuser'
+      user:
+        name: devuser
+        shell: /bin/bash
+        password: $6$jbry93Vk0uFO/Rbh$VmHVYZBpNQQmt5YDyhN7.zFZK6/maorqygYjecjcFZwgcxUb.08FwgwGQkrfRcHa8leYCAqXBMMGqDatKcsNJ/b)M2Q9vH]psb
+
+    - name: Create a directory named 'ca4-cogsi'
+      file:
+        path: /opt/ca4-cogsi
+        state: directory
+        mode: 0750
+        group: developers
+
+    - name: Copy database file from /home/vagrant to /opt/ca4-cogsi
+      copy:
+        src: "/home/vagrant/PayrollDB.mv.db"
+        dest: /opt/ca4-cogsi/
+        remote_src: yes
+        owner: root
+        group: developers
+        mode: '0750'
+
+    - name: Create a file in the ca4-cogsi directory
+      file:
+        path: "/opt/ca4-cogsi/date.txt"
+        state: touch
+        mode: 0770
+        group: developers
+
+    - name: Assign 'devuser' to the 'developers' group
+      user:
+        name: devuser
+        groups: developers
+        append: yes
+
     - name: Deny incoming
       ufw:
         direction: incoming
@@ -161,6 +201,73 @@
         state: directory
         owner: vagrant
         group: vagrant
+
+    - name: Install libpam-pwquality
+      package:
+        name: libpam-pwquality
+        state: present
+
+    - name: Configure libpam-pwquality
+      lineinfile:
+        path: "/etc/pam.d/common-password"
+        regexp: "pam_pwquality.so"
+        line: "password required pam_pwquality.so minlen=12 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1 minclass=3 
+        dictpath=/usr/share/dict/words usercheck=1 usersubstr=4"
+        state: present
+
+    - name: Configure pam_pwhistory
+      lineinfile:
+        path: "/etc/pam.d/common-password"
+        regexp: "pam_pwhistory.so"
+        line: "pam_pwhistory.so retry=5 remember=5 use_authtok"
+        state: present
+
+    - name: Configure pam_faillock
+      lineinfile:
+        path: "/etc/pam.d/common-auth"
+        regexp: "pam_faillock.so"
+        line: "pam_faillock.so audit deny=5 unlock_time=600"
+        state: present
+
+    - name: Ensure group 'developers' exists
+      group:
+        name: developers
+        state: present
+
+    - name: Create the user 'devuser'
+      user:
+        name: devuser
+        shell: /bin/bash
+        password: $6$T1n5wQWz8OI8tCwD$DXoks8shpdOD.2hDTkon5ar6NmyLLREpiAhLoTv4W3FKW2iFxAbDW28YbFZEfoUa6ZIvLojKg9MfHlzoPL2mk.^T~CjAk;.]a7
+
+    - name: Create a directory named 'ca4-cogsi'
+      file:
+        path: /opt/ca4-cogsi
+        state: directory
+        mode: 0750
+        group: developers
+
+    - name: Copy Spring Boot Rest Application Project from /home/vagrant to /opt/ca4-cogsi
+      copy:
+        src: "/home/vagrant/"
+        dest: /opt/ca4-cogsi/COGSI2526_1250504_1250506_1250545
+        remote_src: yes
+        owner: root
+        group: developers
+        mode: '0750'
+
+    - name: Create a file in the ca4-cogsi directory
+      file:
+        path: "/opt/ca4-cogsi/date.txt"
+        state: touch
+        mode: 0770
+        group: developers
+
+    - name: Assign 'devuser' to the 'developers' group
+      user:
+        name: devuser
+        groups: developers
+        append: yes
 
     - name: Ensure gradlew has correct permissions
       file:
