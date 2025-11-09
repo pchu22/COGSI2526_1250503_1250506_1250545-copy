@@ -775,8 +775,16 @@ and permissions are correctly applied. These checks ensure that both the applica
 to authorized users while maintaining security for the VM environment.
 
 ## Add a Health-Check to `playbook.yaml` to verify that both services are running correctly
+Health-check tasks were incorporated into the `playbook.yaml` to confirm that the H2 database and the Spring Boot Rest 
+Application are operating correctly after provisioning. These verifications automatically confirm that every service is 
+active and accessible after being launched.
 
 ### db-server
+The health-check for the `db-server` ensures that the H2 database port is active and receiving TCP connections.
+
+Below you can find an example of the implemented health-check. This task starts waits for the loopback address become 
+available on port 9092. Next, it tries to contact that same address (127.0.0.1) on the same port. If everything is 
+working just fine it returns a success message, otherwise it returns the message "H2 database is not reachable".
 ```yaml
     - name: Check if port 9092 is open
       wait_for:
@@ -796,11 +804,21 @@ to authorized users while maintaining security for the VM environment.
         msg: >
           H2 database is {{ 'running' if h2_check.rc == 0 else 'not reachable' }}
 ```
+
+The output of your health-check should resemble the following example:
+
 <img src="Images/06_01.PNG" alt="db-server health-check passed"/>
 
 ### web-app
+The health-check on the `web-app` machine verifies that the Spring Boot Rest Application successfully responds to HTTP 
+requests, signifying that the application has launched properly.
+
+Below you can find an example of the implemented health-check. This task makes `GET` request to 
+`http://192.168.56.10:8080/employees` each 10 second, and performs this action 5 times. If the return status is not 
+**200** the health-check displays an error message.
+
 ```yaml
-    - name: Check if Spring Boot web application is responding
+    - name: Check if Spring Boot Rest Application is responding
       uri:
         url: http://192.168.56.10:8080/employees
         method: GET
@@ -816,6 +834,15 @@ to authorized users while maintaining security for the VM environment.
         msg: >
           Web application is {{ 'healthy' if webapp_health.status == 200 else 'unhealthy' }}
 ```
+
+The output of your health-check should resemble the following example:
+
+<img src="Images/06_02.PNG" alt="web-app health-check passed"/>
+
+
+Incorporating these checks within the playbook guarantees that the deployment process not only facilitates the 
+installation and configuration of necessary components but also verifies their operational status prior to completion, 
+thereby enhancing reliability and consistency in automation
 
 ## Explanation of the final `playbook.yaml`
 Both machines were provisioned within `playbook.yaml` and they share a lot of similar configurations. 
@@ -1054,68 +1081,216 @@ running correctly or not.
 
 # Alternative technologies to Ansible
 ## Chef
-Chef is an open-source configuration management tool that uses Ruby to develop essential building blocks like recipes 
-and cookbooks. It is an automation tool that converts infrastructure to code. It focuses on writing code instead of 
-using the manual process. This feature enables Chef to manage and configure multiple systems with ease. The code can be 
-tested and continuously deployed using Chef.
+**Chef** is an open-source configuration management tool that automates infrastructure as code using **Ruby**. It allows 
+you to define the desired state of your systems in recipes and cookbooks, which can install packages, manage files, 
+create users, and configure services. Chef uses a client-server model:
+- **Chef Server** stores all configuration data.
+- **Workstations** are where code is developed and tested.
+- **Nodes** are the machines managed by Chef via the **Chef-Client**.
 
-### How Chef works
-Chef basically consists of three components, Chef Server, workstations, and Nodes. The chef server is the central hub 
-of all the operations where changes are stored. The workstation is the place all the codes are created or changed. Nodes 
-are a machine that the chef manages. The user can interact with the chef and chef server through Chef Workstation. 
-Knife and Chef command line tools are used for interacting with Chef Server. The chef node is a virtual or a cloud 
-machine managed by the chef and each node is configured by Chef-Client installed on it. The chef server stores all parts 
-of the configuration. It ensures all the elements are in the right place and are working as expected.
-
-### Chef Cookbooks
-Cookbooks are fundamental working units of Chef, which consist of all the details related to working units, having the 
-capability to modify the configuration and the state of any system configured as a node on Chef infrastructure. 
-Cookbooks can perform multiple tasks. Cookbooks contain values about the desired state of the node.
+Users interact with the server using knife or the Chef CLI. Cookbooks are the main building blocks and include recipes, 
+templates, files, and attributes to define and enforce the configuration of nodes. This approach enables automation, 
+repeatability, and continuous deployment.
 
 ## Puppet
-Puppet is a software configuration management tool used to manage the stages of the IT infrastructure lifecycle, 
-enabling the automation of server deployment, configuration, and maintenance across diverse environments. It operates on 
-a client-server architecture, where the Puppet Master (server) stores configuration code and the Puppet Agent (client) 
-applies these configurations to managed nodes. Puppet uses a declarative, domain-specific language (DSL) to define the 
-desired state of systems, allowing administrators to specify what configurations should exist without detailing the 
-exact steps to achieve them. This approach ensures consistency, scalability, and repeatability across large 
-infrastructures, supporting multiple operating systems including Linux, Windows, and Unix-like systems
+**Puppet** is a configuration management tool that automates server deployment and maintenance using a declarative 
+domain-specific language (DSL). Puppet follows a client-server architecture:
+- **Puppet Master** stores configuration manifests and modules.
+- **Puppet Agents** run on nodes to apply these configurations.
 
-### Hou Puppet works
-Puppet uses a declarative language that models the infrastructure as a series of resources. "Manifests," consisting of 
-a set of JSON files, pull together these resources and define the desired state of the final platform. Puppet stores 
-manifests on the servers and uses them to create compiled configuration instructions as needed, feeding them to the 
-agents via REST APIs.
+Puppet uses **manifests** to define the desired state of resources (`packages`, `users`, `services`, etc.) and 
+**Facter** to gather system facts for platform-specific decisions. **Hiera** provides external configuration data for 
+site-specific settings. Puppet supports idempotency, ensuring the same configuration is applied consistently, and its 
+modular structure allows reuse of code and prebuilt modules from Puppet Forge.
 
-A Puppet tool called Facter discovers and reports "facts" about nodes, which are then used to create the manifests and 
-configurations. Facts include built-in details of the overall platform and its nodes obtained directly via Puppet, 
-custom information the user defines and provides, or external details written in another programming language, such as 
-Perl or C -- or even in plain text. These facts become variables available in the Puppet manifest. 
+### Implementation of CA4 using Puppet
+To provision both machines using Puppet manifests create a file `site.pp`, which will be your Puppet configuration file.
 
-With facts and manifests, users can create platform-agnostic configurations and reference different OSes on different 
-machine configurations from a single resource. The Puppet configuration management tool then ensures the desired outcome 
-occurs on each platform. 
+#### System Update and Package Installation
+Ensure the system packages are updated. Use `apt::update` class, which is similar to running apt-get update. 
 
-This overall approach to create a heavily hardware-agnostic environment is known as 
-infrastructure as code. The user needs little to no knowledge of what physically exists in terms of servers, network 
-items or storage. Instead, the user declares what is required, and the configuration management tool converts the 
-requirements into reality. This also encompasses a capability known as idempotency, which creates instructions that 
-ensure the same result is created time after time, no matter where the results are created.
+```json
+  exec { 'apt_update':
+    command => '/usr/bin/apt-get update',
+    path    => ['/usr/bin', '/usr/sbin'],
+    unless  => 'test $(find /var/lib/apt/periodic/update-success-stamp -mmin -60)',
+  }
+```
 
-Certain situations may require a manual override, such as a service dependency on an OS patch or device driver. 
-Puppet accommodates this via Hiera, a system that provides storage for site-specific configuration data as external 
-information in a key-value pair lookup table. This system supports JSON, YAML and EYAML files, as well as providing 
-back-end support for other systems, such as PostgreSQL. This lets a user create a manifest that calls specific 
-configuration data through Hiera, and bypasses Facter, to create a highly specific runtime instance.
+Next, define the installation of the necessary packages such as `git`, `default-jre`, `openjdk-17-jdk`, `ufw`, and
+`libpam-pwquality`. You can use Puppet's `package` resource to automatically detect the correct package manager of the 
+OS you're using.
 
-Nearly all aspects of Puppet code are maintained in modules that contain both code and data. Each module manages 
-specific tasks, such as installing and managing apps across the IT platform. Most of the items to do with Puppet are 
-then saved by the server in PuppetDB, a database that enables fast operations and access to data via APIs for other 
-applications.
+For `db-server`
+```json
+include apt
 
-Puppet also provides thousands of prebuilt modules, from itself or its large group of third-party and individual 
-developers, through its Puppet Forge repository. Puppet facilitates and maintains the Puppet community, but many of the 
-thousands of people involved are completely independent of the company.
+package { ['git', 'default-jre', 'openjdk-17-jdk', 'ufw', 'libpam-pwquality']:
+  ensure => installed,
+}
+```
+
+For `web-app`
+```json
+include apt
+
+package { ['git', 'default-jre', 'openjdk-17-jdk', 'libpam-pwquality']:
+  ensure => installed,
+}
+```
+
+#### Repository Cloning
+In the `web-app` node, use Puppet’s `vcsrepo` to clone the remote GitHub repository if it doesn't exist.
+
+```json
+vcsrepo { '/home/vagrant/COGSI2526_1250503_1250506_1250545':
+  ensure   => present,
+  provider => git,
+  source   => 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy',
+  revision => 'main',
+  user     => 'vagrant',
+}
+```
+
+#### Password policy configuration
+Use Puppet’s `file_line` resource, to modify `/etc/pam.d/common-password` and `/etc/pam.d/common-auth`.
+
+The following configuration enforce password complexity, prevent password reuse, and temporarily lock accounts after 
+multiple failed login attempts.
+
+```json
+file_line { 'configure_pwquality':
+  path  => '/etc/pam.d/common-password',
+  match => 'pam_pwquality.so',
+  line  => 'password required pam_pwquality.so minlen=12 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1 minclass=3 dictpath=/usr/share/dict/words usercheck=1 usersubstr=4',
+}
+
+file_line { 'configure_pwhistory':
+  path  => '/etc/pam.d/common-password',
+  match => 'pam_pwhistory.so',
+  line  => 'password required pam_pwhistory.so retry=5 remember=5 use_authtok',
+}
+
+file_line { 'configure_faillock':
+  path  => '/etc/pam.d/common-auth',
+  match => 'pam_faillock.so',
+  line  => 'auth required pam_faillock.so audit deny=5 unlock_time=600',
+}
+```
+
+#### User groups and accounts management
+Create a users group named `developers` and a user named `devuser`. Next assign `devuser` to the `developers` group. 
+Apply this configuration to both machines.
+
+```json
+group { 'developers':
+ensure => present,
+}
+
+user { 'devuser':
+ensure   => present,
+  shell    => '/bin/bash',
+  password => '$6$jbry93Vk0uFO/Rbh$VmHVYZBpNQQmt5YDyhN7.zFZK6/maorqygYjecjcFZwgcxUb.08FwgwGQkrfRcHa8leYCAqXBMMGqDatKcsNJ/b)M2Q9vH]psb',
+  groups   => ['developers'],
+}
+```
+
+#### File creation and copy
+Use the following configuration to create the `/opt/ca4-cogsi` on both nodes.
+
+```json
+file { '/opt/ca4-cogsi':
+  ensure => directory,
+  mode   => '0750',
+  owner  => 'root',
+  group  => 'developers',
+}
+```
+
+For `db-server`
+Then copy the database file `PayrollDB.mv.db` from `/home/vagrant` to `/opt/ca4-cogsi` directory.
+
+```json
+file { '/opt/ca4-cogsi/PayrollDB.mv.db':
+  ensure => file,
+  source => '/home/vagrant/PayrollDB.mv.db',
+  owner  => 'root',
+  group  => 'developers',
+  mode   => '0750',
+}
+```
+
+For `web-app`
+Next, copy the Spring Boot Rest Application project directory from `/home/vagrant` to `/opt/c4-cogsi` directory.
+
+```json
+file { '/opt/ca4-cogsi/COGSI2526_1250503_1250506_1250545':
+  ensure => directory,
+  recurse => true,
+  source  => '/home/vagrant/COGSI2526_1250503_1250506_1250545',
+  owner   => 'root',
+  group   => 'developers',
+  mode    => '0750',
+}
+```
+
+#### Firewall Configuration (db-server)
+Define firewall rules using the `ufw` module to replicate the rules applied using Ansible's `playbook.yaml`.
+
+```json
+exec { 'deny_incoming':
+  command => '/usr/sbin/ufw default deny incoming',
+  unless  => '/usr/sbin/ufw status | grep -q "deny (incoming)"',
+}
+
+exec { 'allow_outgoing':
+  command => '/usr/sbin/ufw default allow outgoing',
+  unless  => '/usr/sbin/ufw status | grep -q "allow (outgoing)"',
+}
+
+exec { 'allow_ssh':
+  command => '/usr/sbin/ufw allow 22/tcp',
+  unless  => '/usr/sbin/ufw status | grep -q "22/tcp"',
+}
+
+exec { 'allow_db_from_webapp':
+  command => '/usr/sbin/ufw allow from 192.168.56.10 to any port 9092 proto tcp',
+  unless  => '/usr/sbin/ufw status | grep -q "9092/tcp"',
+}
+
+service { 'ufw':
+  ensure => running,
+  enable => true,
+}
+```
+
+#### Service Startup
+Before starting the web application, ensure the database is ready by checking if the port 9092 is open.
+
+For `db-server`
+```json
+exec { 'run_h2_database':
+  command => 'nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -baseDir /home/vagrant &',
+  cwd     => '/home/vagrant',
+  unless  => 'nc -z 127.0.0.1 9092',
+}
+
+```
+
+For `web-app`
+```json
+exec { 'wait_for_db':
+  command => 'bash -c "until nc -z 192.168.56.11 9092; do sleep 5; done"',
+  timeout => 180,
+}
+
+exec { 'run_spring_boot_app':
+  command => './gradlew bootRun &',
+  cwd     => '/home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/',
+  unless  => 'nc -z 127.0.0.1 8080',
+}
+
+```
 
 # Self-Evaluation
 ```bash
