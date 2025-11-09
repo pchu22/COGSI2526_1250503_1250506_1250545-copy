@@ -126,10 +126,27 @@
 
     - name: Run H2 Database
       shell: |
-        nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -baseDir /home/vagrant
+        nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -baseDir /home/vagrant &
       args:
         chdir: /home/vagrant
 
+    - name: Check if port 9092 is open
+      wait_for:
+        host: 127.0.0.1
+        port: 9092
+        timeout: 30
+        state: started
+
+    - name: Verify the database is accepting TCP connections
+      shell: |
+        nc -zv 127.0.0.1 9092
+      register: h2_check
+      ignore_errors: yes
+
+    - name: Display database health status
+      debug:
+        msg: >
+          H2 database is {{ 'running' if h2_check.rc == 0 else 'not reachable' }}
 
 - name: Provision web-app VM
   hosts: web-app
@@ -286,6 +303,22 @@
 
     - name: Run Spring Boot Rest Application
       shell: |
-        ./gradlew bootRun
+        ./gradlew bootRun &
       args:
         chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
+
+    - name: Check if Spring Boot web application is responding
+      uri:
+        url: http://192.168.56.10:8080/employees
+        method: GET
+        return_content: no
+        status_code: 200
+      register: webapp_health
+      retries: 5
+      delay: 10
+      until: webapp_health.status == 200
+
+    - name: Display web application health status
+      debug:
+        msg: >
+          Web application is {{ 'healthy' if webapp_health.status == 200 else 'unhealthy' }}

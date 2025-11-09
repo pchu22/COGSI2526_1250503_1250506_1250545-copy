@@ -655,9 +655,38 @@ After executing the command mentioned above, your output should resemble the ref
 
 <img src="Images/04_01.PNG" alt="Ansible hosts list"/>
 
-## Create groups and users inside both of `web-app` and `db-server` VMs using Ansible
+## Create user groups and account inside both of `web-app` and `db-server` VMs using Ansible
+To automate the creation of user groups and accounts on both the `web-app` and `db-server` VMs, you can define the 
+following tasks in your playbook.
+
+### Create user `devuser`
+This task creates the user account `devuser`. To ensure the user exists on both machines, include this task in the 
+provisioning of the `web-app` and `db-server` VMs.
+
+To generate a secure password, install `pwgen` and `whois` using the command `sudo apt-get install pwgen whois`. Then, 
+generate and hash a password with `pass='pwgen --secure --capitalize --numerals --symbols 12 1'` and 
+`echo $pass | mkpasswd --stdin --method=sha-512; echo $pass` commands.
+
+**NEVER INCLUDE PASSWORD HASHES OR OTHER SECRETS DIRECTLY IN YOUR PLAYBOOKS!** Store them securely (e.g, in Ansible 
+vault) if needed.
+
+Below you will find an example task for creating a user using Ansible. 
+```yaml
+    - name: Create the user 'devuser'
+      user:
+        name: devuser
+        shell: /bin/bash
+        password: $6$T1n5wQWz8OI8tCwD$DXoks8shpdOD.2hDTkon5ar6NmyLLREpiAhLoTv4W3FKW2iFxAbDW28YbFZEfoUa6ZIvLojKg9MfHlzoPL2mk.^T~CjAk;.]a7
+```
+
+After creating the user account, login into either VM and run the command `getent passwd devuser`. If the output 
+resembles the example below, the user was successfully created.
+
+<img src="Images/05_01.PNG" alt="output of the command getent passwd devuser"/>
 
 ### Create group `developers`
+This task creates the `developers` user group. The `state: present` parameter ensures its only created if it doesn't 
+already exist. 
 
 ```yaml
     - name: Ensure group 'developers' exists
@@ -666,9 +695,362 @@ After executing the command mentioned above, your output should resemble the ref
         state: present
 ```
 
-**NEVER INCLUDE PASSWORD HASHES OR OTHER SECRETS DIRECTLY IN PLAYBOOKS OR VERSION CONTROL**
+After connecting to the guest machine via SSH, verify the group was successfully created running the command
+`getent group developers`.
+
+You should see the output indicating that `devuser` belongs to the `developers` user group.
+
+<img src="Images/05_02.PNG" alt="output of the command getent group developer"/>
+
+### Creating `ca4-cogsi` directory and Copying files
+Next, you'll prepare the environment for both `web-app` and `db-server` VMs.
+
+Start by creating a new directory called `/opt/c4-cogsi` with the proper permissions and group ownership. Use the 
+provided task as an example.
+
+#### Creating `ca4-cogsi` directory
+Add this task to both VM provisioning to create `/opt/c4-cogsi` in both `web-app` and `db-server` machines
+
+```yaml
+    - name: Create a directory named 'ca4-cogsi'
+      file:
+        path: /opt/ca4-cogsi
+        state: directory
+        mode: 0750
+        group: developers
+```
+This ensures that only members of the `developers` group can access the directory.
+
+### Copying `Spring Boot Rest Application` to `/opt/ca4-cogsi`
+Add this task to copy the application project from the VM’s home directory to `/opt/ca4-cogsi`.
+
+```yaml
+    - name: Copy Spring Boot Rest Application Project from /home/vagrant to /opt/ca4-cogsi
+      copy:
+        src: "/home/vagrant/"
+        dest: /opt/ca4-cogsi/COGSI2526_1250504_1250506_1250545
+        remote_src: yes
+        owner: root
+        group: developers
+        mode: '0750'
+```
+The `remote_src: yes` tells Ansible the source already exists on the VM. Ownership and permissions are set to allow 
+proper access to authorized users.
+
+### Copying `PayrollDb.mv.db` to `/opt/ca4-cogsi`
+Add this task to copy the `PayrollDb.mv.db` file from th VM home directory into `/opt/ca4-cogsi`.
+
+```yaml
+    - name: Copy database file from /home/vagrant to /opt/ca4-cogsi
+      copy:
+        src: "/home/vagrant/PayrollDB.mv.db"
+        dest: /opt/ca4-cogsi/
+        remote_src: yes
+        owner: root
+        group: developers
+        mode: '0750'
+```
+
+### Confirming /opt/ca4-cogsi directory permissions
+After creating `/opt(ca4-cogsi` directory and copying the application and database file, it's important to verify that 
+permissions and ownership are correctly set.
+
+Log into your VMs using the default `vagrant` and run `ls -la /opt/ca4-cogsi`. This command displays the directory
+content along with ownership and permissions. If your result is similar to the one in the image below it means your 
+`vagrant` default user has no access to `ca4-cogsi` (which is the expected behaviour). 
+
+<img src="Images/05_03.PNG" alt="output of the command ls -la /opt/ca4-cogsi"/>
+
+Next, switch users from the `vagrant` default user to `devuser` and try changing directories to 
+`/opt/c4-cogsi`, running the command `cd /opt/c4-cogsi`. The result should resemble the example below:
+
+#### web-app
+<img src="Images/05_09.PNG" alt="changing directories to /opt/c4-cogsi as devuser within web-app"/>
+
+#### db-server
+<img src="Images/05_04.PNG" alt="changing directories to /opt/c4-cogsi as devuser within db-server"/>
+
+`devuser` should be able to access the directory and its contents without issues, confirming that the group membership 
+and permissions are correctly applied. These checks ensure that both the application and database files are accessible 
+to authorized users while maintaining security for the VM environment.
 
 ## Add a Health-Check to `playbook.yaml` to verify that both services are running correctly
+
+### db-server
+```yaml
+    - name: Check if port 9092 is open
+      wait_for:
+        host: 127.0.0.1
+        port: 9092
+        timeout: 30
+        state: started
+
+    - name: Verify the database is accepting TCP connections
+      shell: |
+        nc -zv 127.0.0.1 9092
+      register: h2_check
+      ignore_errors: yes
+
+    - name: Display database health status
+      debug:
+        msg: >
+          H2 database is {{ 'running' if h2_check.rc == 0 else 'not reachable' }}
+```
+<img src="Images/06_01.PNG" alt="db-server health-check passed"/>
+
+### web-app
+```yaml
+    - name: Check if Spring Boot web application is responding
+      uri:
+        url: http://192.168.56.10:8080/employees
+        method: GET
+        return_content: no
+        status_code: 200
+      register: webapp_health
+      retries: 5
+      delay: 10
+      until: webapp_health.status == 200
+
+    - name: Display web application health status
+      debug:
+        msg: >
+          Web application is {{ 'healthy' if webapp_health.status == 200 else 'unhealthy' }}
+```
+
+## Explanation of the final `playbook.yaml`
+Both machines were provisioned within `playbook.yaml` and they share a lot of similar configurations. 
+
+Starting with the first task, ensures the system package database is up-to-date (but it was defined that the system 
+should not refresh it if the database was updated in the last hour). This task is present both in `web-app` and 
+`db-server` provisioning.
+
+```yaml
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+```
+
+Next, we defined the installation of packages such as `git`, `java`,`jdk`, `ufw` and `libpam-pwqaulity` using `package`,
+that automatically detects the right package manager of the guest machine OS. This task is present both in `web-app` and
+`db-server` provisioning.
+
+```yaml
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      package:
+        name: default-jre
+        state: present
+
+    - name: Install JDK
+      package:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Install UFW
+      package:
+        name: ufw
+        state: present
+
+    - name: Install libpam-pwquality
+      package:
+        name: libpam-pwquality
+        state: present
+```
+
+Within the `web-app` VM was necessary to clone the remote GitHub repository to access the project. To successfully clone
+the remote repository the following tasks were defined:
+```yaml
+    - name: Ensure if the repository exists
+      stat:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/.git
+      register: repo_status
+
+    - name: Clone the Git repository
+      git:
+        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        version: main
+        update: no
+      register: git_clone
+      when: not repo_status.stat.exists
+
+    - name: Pull from the Git repository
+      git:
+        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        version: main
+        update: yes
+        force: yes
+      register: git_pull
+      when: git_clone is not changed or git_clone is skipped
+```
+The first task makes sure `COGSI2526_1250503_1250506_1250545` is a repo and registers the result in the `repo_status` 
+variable. Then, it proceeds cloning the remote repository from GitHub if it hasn't been cloned yet, storing the result 
+in a variable defined as `git_clone`. Finally, it ends up by pulling the most recent version of the application from the 
+repository only if the cloning process is skipped or if `git_clone` has the same value as before executing the cloning 
+task.
+
+Then we proceeded with the creation of strong password policies ensuring only passwords that follow de defined criteria 
+are authorized to be used. This task is present both in `web-app` and
+`db-server` provisioning.
+
+```yaml
+    - name: Configure libpam-pwquality
+      lineinfile:
+        path: "/etc/pam.d/common-password"
+        regexp: "pam_pwquality.so"
+        line: "password required pam_pwquality.so minlen=12 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1 minclass=3 
+        dictpath=/usr/share/dict/words usercheck=1 usersubstr=4"
+        state: present
+
+    - name: Configure pam_pwhistory
+      lineinfile:
+        path: "/etc/pam.d/common-password"
+        regexp: "pam_pwhistory.so"
+        line: "pam_pwhistory.so retry=5 remember=5 use_authtok"
+        state: present
+
+    - name: Configure pam_faillock
+      lineinfile:
+        path: "/etc/pam.d/common-auth"
+        regexp: "pam_faillock.so"
+        line: "pam_faillock.so audit deny=5 unlock_time=600"
+        state: present
+```
+
+Next, we created the user group `developers` and the user account `devuser`, and assigned `devuser` to the developers 
+group. This task is present both in `web-app` and `db-server` provisioning.
+
+```yaml
+    - name: Ensure group 'developers' exists
+      group:
+        name: developers
+        state: present
+
+    - name: Create the user 'devuser'
+      user:
+        name: devuser
+        shell: /bin/bash
+        password: $6$jbry93Vk0uFO/Rbh$VmHVYZBpNQQmt5YDyhN7.zFZK6/maorqygYjecjcFZwgcxUb.08FwgwGQkrfRcHa8leYCAqXBMMGqDatKcsNJ/b)M2Q9vH]psb
+
+    - name: Assign 'devuser' to the 'developers' group
+      user:
+        name: devuser
+        groups: developers
+        append: yes
+
+```
+
+Then, we defined a task to create a new directory `ca4-cogsi` in both VMs, and copied `PayrollDB.mv.db` and 
+`COGSI2526_1250503_1250506_1250545` to the newly created folder.
+
+```yaml
+    - name: Create a directory named 'ca4-cogsi'
+      file:
+        path: /opt/ca4-cogsi
+        state: directory
+        mode: 0750
+        group: developers
+```
+
+### db-server
+```yaml
+    - name: Copy database file from /home/vagrant to /opt/ca4-cogsi
+      copy:
+        src: "/home/vagrant/PayrollDB.mv.db"
+        dest: /opt/ca4-cogsi/
+        remote_src: yes
+        owner: root
+        group: developers
+        mode: '0750'
+```
+### web-app
+```yaml
+    - name: Copy Spring Boot Rest Application Project from /home/vagrant to /opt/ca4-cogsi
+      copy:
+        src: "/home/vagrant/"
+        dest: /opt/ca4-cogsi/COGSI2526_1250504_1250506_1250545
+        remote_src: yes
+        owner: root
+        group: developers
+        mode: '0750'
+```
+
+The `remote_src: yes` tells Ansible the source already exists on the VM. Ownership and permissions are set to allow
+proper access to authorized users.
+
+In the `db-server` VM, we defined a couple of firewall rules using `ufw` in order to deny all the incoming traffic and 
+allow all the outgoing traffic. We defined 2 more rules, one to allow traffic on port 22 (SSH), and other to allow 
+traffic from the IP address 192.168.56.10 on port 9092 in order for the Spring Boot Rest Application to connect to the 
+database via TCP.
+
+```yaml
+    - name: Deny incoming
+      ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Allow outgoing
+      ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Allow SSH on port 22
+      ufw:
+        rule: allow
+        port: 22
+        proto: tcp
+
+    - name: Allow incoming form 192.168.56.10:9092 via TCP
+      ufw:
+        rule: allow
+        port: 9092
+        proto: tcp
+        from_ip: 192.168.56.10
+
+    - name: Ensure UFW is running
+      ufw:
+        state: enabled
+```
+
+Before starting the `web-app` service, we ensured it waits for the H2 database to start its service with the following 
+task:
+```yaml
+    - name: Wait for DB to be ready
+      wait_for:
+        host: 192.168.56.11
+        port: 9092
+        timeout: 180
+        state: started
+```
+
+Finally, we ran both services and added health-checks (explained in the previous section) in order to track if they are 
+running correctly or not.
+### db-server
+
+```yaml
+    - name: Run H2 Database
+      shell: |
+        nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -baseDir /home/vagrant &
+      args:
+        chdir: /home/vagrant
+```
+
+### web-app
+
+```yaml
+    - name: Run Spring Boot Rest Application
+      shell: |
+        ./gradlew bootRun &
+      args:
+        chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
+```
 
 # Alternative technologies to Ansible
 ## Chef
