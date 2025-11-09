@@ -1294,7 +1294,7 @@ exec { 'run_spring_boot_app':
 
 # Self-Evaluation
 ```bash
-Daniel (1250503) - ??%
-Diogo (1250506) - ??%
+Daniel (1250503) - 80%
+Diogo (1250506) - 80%
 Pedro (1250545) - 100%
 ```

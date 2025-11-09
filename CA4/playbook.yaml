@@ -1,0 +1,324 @@
+---
+- name: Provision db-server VM
+  hosts: db-server
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      package:
+        name: default-jre
+        state: present
+
+    - name: Install JDK
+      package:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Install UFW
+      package:
+        name: ufw
+        state: present
+
+    - name: Install libpam-pwquality
+      package:
+        name: libpam-pwquality
+        state: present
+
+    - name: Configure libpam-pwquality
+      lineinfile:
+        path: "/etc/pam.d/common-password"
+        regexp: "pam_pwquality.so"
+        line: "password required pam_pwquality.so minlen=12 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1 minclass=3 
+        dictpath=/usr/share/dict/words usercheck=1 usersubstr=4"
+        state: present
+
+    - name: Configure pam_pwhistory
+      lineinfile:
+        path: "/etc/pam.d/common-password"
+        regexp: "pam_pwhistory.so"
+        line: "pam_pwhistory.so retry=5 remember=5 use_authtok"
+        state: present
+
+    - name: Configure pam_faillock
+      lineinfile:
+        path: "/etc/pam.d/common-auth"
+        regexp: "pam_faillock.so"
+        line: "pam_faillock.so audit deny=5 unlock_time=600"
+        state: present
+
+    - name: Ensure group 'developers' exists
+      group:
+        name: developers
+        state: present
+
+    - name: Create the user 'devuser'
+      user:
+        name: devuser
+        shell: /bin/bash
+        password: $6$jbry93Vk0uFO/Rbh$VmHVYZBpNQQmt5YDyhN7.zFZK6/maorqygYjecjcFZwgcxUb.08FwgwGQkrfRcHa8leYCAqXBMMGqDatKcsNJ/b)M2Q9vH]psb
+
+    - name: Create a directory named 'ca4-cogsi'
+      file:
+        path: /opt/ca4-cogsi
+        state: directory
+        mode: 0750
+        group: developers
+
+    - name: Copy database file from /home/vagrant to /opt/ca4-cogsi
+      copy:
+        src: "/home/vagrant/PayrollDB.mv.db"
+        dest: /opt/ca4-cogsi/
+        remote_src: yes
+        owner: root
+        group: developers
+        mode: '0750'
+
+    - name: Create a file in the ca4-cogsi directory
+      file:
+        path: "/opt/ca4-cogsi/date.txt"
+        state: touch
+        mode: 0770
+        group: developers
+
+    - name: Assign 'devuser' to the 'developers' group
+      user:
+        name: devuser
+        groups: developers
+        append: yes
+
+    - name: Deny incoming
+      ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Allow outgoing
+      ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Allow SSH on port 22
+      ufw:
+        rule: allow
+        port: 22
+        proto: tcp
+
+    - name: Allow incoming form 192.168.56.10:9092 via TCP
+      ufw:
+        rule: allow
+        port: 9092
+        proto: tcp
+        from_ip: 192.168.56.10
+
+    - name: Ensure UFW is running
+      ufw:
+        state: enabled
+
+    - name: Run H2 Database
+      shell: |
+        nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -baseDir /home/vagrant &
+      args:
+        chdir: /home/vagrant
+
+    - name: Check if port 9092 is open
+      wait_for:
+        host: 127.0.0.1
+        port: 9092
+        timeout: 30
+        state: started
+
+    - name: Verify the database is accepting TCP connections
+      shell: |
+        nc -zv 127.0.0.1 9092
+      register: h2_check
+      ignore_errors: yes
+
+    - name: Display database health status
+      debug:
+        msg: >
+          H2 database is {{ 'running' if h2_check.rc == 0 else 'not reachable' }}
+
+- name: Provision web-app VM
+  hosts: web-app
+  become: true
+  tasks:
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      apt:
+        name: default-jre
+        state: present
+
+    - name: Install JDK
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Ensure if the repository exists
+      stat:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/.git
+      register: repo_status
+
+    - name: Clone the Git repository
+      git:
+        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        version: main
+        update: no
+      register: git_clone
+      when: not repo_status.stat.exists
+
+    - name: Pull from the Git repository
+      git:
+        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        version: main
+        update: yes
+        force: yes
+      register: git_pull
+      when: git_clone is not changed or git_clone is skipped
+
+    - name: Repository clone debug message
+      debug:
+        msg: "Repository successfully cloned!"
+      when: git_clone.changed
+
+    - name: Repository existence debug message
+      debug:
+        msg: "Repository already exists. Skipping clone.."
+      when: git_clone is skipped
+
+    - name: Up-to-dated project debug message
+      debug:
+        msg: "Repository successfully updated!"
+      when: not git_pull.changed
+
+    - name: Ensure project directory has the right ownership
+      file:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        state: directory
+        owner: vagrant
+        group: vagrant
+
+    - name: Install libpam-pwquality
+      package:
+        name: libpam-pwquality
+        state: present
+
+    - name: Configure libpam-pwquality
+      lineinfile:
+        path: "/etc/pam.d/common-password"
+        regexp: "pam_pwquality.so"
+        line: "password required pam_pwquality.so minlen=12 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1 minclass=3 
+        dictpath=/usr/share/dict/words usercheck=1 usersubstr=4"
+        state: present
+
+    - name: Configure pam_pwhistory
+      lineinfile:
+        path: "/etc/pam.d/common-password"
+        regexp: "pam_pwhistory.so"
+        line: "pam_pwhistory.so retry=5 remember=5 use_authtok"
+        state: present
+
+    - name: Configure pam_faillock
+      lineinfile:
+        path: "/etc/pam.d/common-auth"
+        regexp: "pam_faillock.so"
+        line: "pam_faillock.so audit deny=5 unlock_time=600"
+        state: present
+
+    - name: Ensure group 'developers' exists
+      group:
+        name: developers
+        state: present
+
+    - name: Create the user 'devuser'
+      user:
+        name: devuser
+        shell: /bin/bash
+        password: $6$T1n5wQWz8OI8tCwD$DXoks8shpdOD.2hDTkon5ar6NmyLLREpiAhLoTv4W3FKW2iFxAbDW28YbFZEfoUa6ZIvLojKg9MfHlzoPL2mk.^T~CjAk;.]a7
+
+    - name: Create a directory named 'ca4-cogsi'
+      file:
+        path: /opt/ca4-cogsi
+        state: directory
+        mode: 0750
+        group: developers
+
+    - name: Copy Spring Boot Rest Application Project from /home/vagrant to /opt/ca4-cogsi
+      copy:
+        src: "/home/vagrant/"
+        dest: /opt/ca4-cogsi/COGSI2526_1250504_1250506_1250545
+        remote_src: yes
+        owner: root
+        group: developers
+        mode: '0750'
+
+    - name: Create a file in the ca4-cogsi directory
+      file:
+        path: "/opt/ca4-cogsi/date.txt"
+        state: touch
+        mode: 0770
+        group: developers
+
+    - name: Assign 'devuser' to the 'developers' group
+      user:
+        name: devuser
+        groups: developers
+        append: yes
+
+    - name: Ensure gradlew has correct permissions
+      file:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/gradlew
+        state: file
+        owner: vagrant
+        group: vagrant
+        mode: '0744'
+
+    - name: Wait for DB to be ready
+      wait_for:
+        host: 192.168.56.11
+        port: 9092
+        timeout: 180
+        state: started
+
+    - name: Run Spring Boot Rest Application
+      shell: |
+        ./gradlew bootRun &
+      args:
+        chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
+
+    - name: Check if Spring Boot web application is responding
+      uri:
+        url: http://192.168.56.10:8080/employees
+        method: GET
+        return_content: no
+        status_code: 200
+      register: webapp_health
+      retries: 5
+      delay: 10
+      until: webapp_health.status == 200
+
+    - name: Display web application health status
+      debug:
+        msg: >
+          Web application is {{ 'healthy' if webapp_health.status == 200 else 'unhealthy' }}
