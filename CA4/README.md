@@ -1109,7 +1109,7 @@ To provision both machines using Puppet manifests create a file `site.pp`, which
 #### System Update and Package Installation
 Ensure the system packages are updated. Use `apt::update` class, which is similar to running apt-get update. 
 
-```json
+```bash
   exec { 'apt_update':
     command => '/usr/bin/apt-get update',
     path    => ['/usr/bin', '/usr/sbin'],
@@ -1122,7 +1122,7 @@ Next, define the installation of the necessary packages such as `git`, `default-
 OS you're using.
 
 For `db-server`
-```json
+```bash
 include apt
 
 package { ['git', 'default-jre', 'openjdk-17-jdk', 'ufw', 'libpam-pwquality']:
@@ -1131,7 +1131,7 @@ package { ['git', 'default-jre', 'openjdk-17-jdk', 'ufw', 'libpam-pwquality']:
 ```
 
 For `web-app`
-```json
+```bash
 include apt
 
 package { ['git', 'default-jre', 'openjdk-17-jdk', 'libpam-pwquality']:
@@ -1142,7 +1142,7 @@ package { ['git', 'default-jre', 'openjdk-17-jdk', 'libpam-pwquality']:
 #### Repository Cloning
 In the `web-app` node, use Puppet’s `vcsrepo` to clone the remote GitHub repository if it doesn't exist.
 
-```json
+```bash
 vcsrepo { '/home/vagrant/COGSI2526_1250503_1250506_1250545':
   ensure   => present,
   provider => git,
@@ -1158,7 +1158,7 @@ Use Puppet’s `file_line` resource, to modify `/etc/pam.d/common-password` and 
 The following configuration enforce password complexity, prevent password reuse, and temporarily lock accounts after 
 multiple failed login attempts.
 
-```json
+```bash
 file_line { 'configure_pwquality':
   path  => '/etc/pam.d/common-password',
   match => 'pam_pwquality.so',
@@ -1182,7 +1182,7 @@ file_line { 'configure_faillock':
 Create a users group named `developers` and a user named `devuser`. Next assign `devuser` to the `developers` group. 
 Apply this configuration to both machines.
 
-```json
+```bash
 group { 'developers':
 ensure => present,
 }
@@ -1198,7 +1198,7 @@ ensure   => present,
 #### File creation and copy
 Use the following configuration to create the `/opt/ca4-cogsi` on both nodes.
 
-```json
+```bash
 file { '/opt/ca4-cogsi':
   ensure => directory,
   mode   => '0750',
@@ -1210,7 +1210,7 @@ file { '/opt/ca4-cogsi':
 For `db-server`
 Then copy the database file `PayrollDB.mv.db` from `/home/vagrant` to `/opt/ca4-cogsi` directory.
 
-```json
+```bash
 file { '/opt/ca4-cogsi/PayrollDB.mv.db':
   ensure => file,
   source => '/home/vagrant/PayrollDB.mv.db',
@@ -1223,7 +1223,7 @@ file { '/opt/ca4-cogsi/PayrollDB.mv.db':
 For `web-app`
 Next, copy the Spring Boot Rest Application project directory from `/home/vagrant` to `/opt/c4-cogsi` directory.
 
-```json
+```bash
 file { '/opt/ca4-cogsi/COGSI2526_1250503_1250506_1250545':
   ensure => directory,
   recurse => true,
@@ -1237,7 +1237,7 @@ file { '/opt/ca4-cogsi/COGSI2526_1250503_1250506_1250545':
 #### Firewall Configuration (db-server)
 Define firewall rules using the `ufw` module to replicate the rules applied using Ansible's `playbook.yaml`.
 
-```json
+```bash
 exec { 'deny_incoming':
   command => '/usr/sbin/ufw default deny incoming',
   unless  => '/usr/sbin/ufw status | grep -q "deny (incoming)"',
@@ -1268,7 +1268,7 @@ service { 'ufw':
 Before starting the web application, ensure the database is ready by checking if the port 9092 is open.
 
 For `db-server`
-```json
+```bash
 exec { 'run_h2_database':
   command => 'nohup java -cp /home/vagrant/libs/h2-2.3.232.jar org.h2.tools.Server -tcp -tcpAllowOthers -tcpPort 9092 -baseDir /home/vagrant &',
   cwd     => '/home/vagrant',
@@ -1278,7 +1278,7 @@ exec { 'run_h2_database':
 ```
 
 For `web-app`
-```json
+```bash
 exec { 'wait_for_db':
   command => 'bash -c "until nc -z 192.168.56.11 9092; do sleep 5; done"',
   timeout => 180,
