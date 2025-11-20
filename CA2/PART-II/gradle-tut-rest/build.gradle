@@ -49,7 +49,7 @@ test{
 //}
 
 // Define the main class for the application
-mainClassName = 'payroll/PayrollApplication'
+mainClassName = 'payroll.PayrollApplication'
 
 tasks.register("cleanDeployment", Delete){
     group = 'deployment'
