@@ -1,0 +1,30 @@
+networks:
+  ca5_network:
+
+services:
+  db-server:
+    build:
+      context: .
+      dockerfile: docker/db-server/Dockerfile
+    image: db-server
+    networks:
+      ca5_network:
+    ports:
+      - "9092:9092"
+    volumes:
+      - h2-data:/h2database/payroll/data
+
+  web-app:
+    build:
+      context: .
+      dockerfile: docker/web-app/Dockerfile
+    image: web-app
+    networks:
+      ca5_network:
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db-server
+
+volumes:
+  h2-data:
