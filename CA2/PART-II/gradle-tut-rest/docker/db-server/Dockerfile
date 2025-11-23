@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 FROM openjdk:21-ea-21-jdk-slim
 
-COPY docker/db-server/h2-2.2.224.jar h2.jar
-
+RUN apt-get update && apt-get install -y netcat iputils-ping
 RUN mkdir -p /h2database/payroll/data
 
+COPY docker/db-server/h2-2.2.224.jar h2.jar
 COPY ../../CA2-Part2/PayrollDB.mv.db /h2database/payroll/data
 
 VOLUME /h2database/payroll/data

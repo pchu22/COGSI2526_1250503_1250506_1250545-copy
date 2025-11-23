@@ -7,10 +7,17 @@ services:
       context: .
       dockerfile: docker/db-server/Dockerfile
     image: db-server
+    container_name: db-server
     networks:
       ca5_network:
     ports:
       - "9092:9092"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 15s
+      timeout: 15s
+      retries: 5
+      start_period: 10s
     volumes:
       - h2-data:/h2database/payroll/data
 
@@ -19,12 +26,14 @@ services:
       context: .
       dockerfile: docker/web-app/Dockerfile
     image: web-app
+    container_name: web-app
     networks:
       ca5_network:
     ports:
       - "8080:8080"
     depends_on:
-      - db-server
+      db-server:
+        condition: service_healthy
 
 volumes:
   h2-data:

@@ -291,9 +291,6 @@ The following image is the expected output you should get after running the prev
 
 <img src="PART-I/Images/02_03.PNG" alt="simple-chat-application_v2.0 container resource usage"/>
 
-#### Comparison between versions 1 and version 2
-
-
 ### Spring Boot Rest Application
 As previously mentioned, you'll be developing two versions of the Spring Boot Rest Application for this part of the 
 class assignment. Find below a reference for each one of the versions with the respective description of the used 
@@ -500,6 +497,15 @@ container**.
 The following image is the expected output you should get after running the previously mentioned command.
 
 <img src="PART-I/Images/02_06.PNG" alt="spring-boot-rest-application_v2.0 container resource usage"/>
+
+#### Comparison between versions 1 and version 2
+The main difference **between versions 1 and 2** is the **number of layers in each container** and **the amount of disk
+space they occupy**. This is primarily due to the base image chosen for the second container, which is significantly
+heavier than the one used in the first version.
+
+In the next sections (using Multi-Stage builds), we will switch to a smaller and more lightweight base image. As a
+result, the final containers will have fewer layers and a much smaller footprint — approximately 500 MB each instead of
+1.9–2 GB.
 
 ### Multi-Stage builds
 **Multi-Stage builds reduce image size and improve security by separating build and runtime environments**. With 
@@ -794,7 +800,6 @@ repositories, respectively.
 #### gradle-tut-rest
 <img src="PART-I/Images/04_03.PNG" alt="gradle-tut-rest repository"/>
 
-
 ## Part II
 The goal for the second part of the class assignment is to create a containerized environment for running the Spring 
 Boot Rest Application. You will implement a solution similar to CA3-P2, but this time using Docker instead of Vagrant.
@@ -813,6 +818,203 @@ Spring Boot Rest Application, such as DB URL, username, password, etc...)
 
 Finally, publish both images (db and web) to **Docker Hub**.
 
+### Use `Docker Composer` to create two containers
+The `compose.yaml` file for both the `web-app` and the `db-server` should follow the structure outlined below.
+
+```yaml
+networks:
+  ca5_network:
+
+services:
+  db-server:
+    build:
+      context: .
+      dockerfile: docker/db-server/Dockerfile
+    image: db-server
+    container_name: db-server
+    networks:
+      ca5_network:
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 15s
+      timeout: 15s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - h2-data:/h2database/payroll/data
+
+  web-app:
+    build:
+      context: .
+      dockerfile: docker/web-app/Dockerfile
+    image: web-app
+    container_name: web-app
+    networks:
+      ca5_network:
+    ports:
+      - "8080:8080"
+    depends_on:
+      db-server:
+        condition: service_healthy
+
+volumes:
+  h2-data:
+```
+
+#### `web-app` container
+The `Dockerfile` you'll use for the web app follows a structure similar to (or the same as) the Multi-Stage build you 
+developed during the first part of the class assignment. 
+
+In our setup, we have organized the `Dockerfile` files into separate directories for clarity:
+
+```bash
+docker/
+├─ web-app/
+│  └─ Dockerfile
+└─ db-server/
+   ├─ Dockerfile
+   └─ h2.ajr
+```
+
+This structure keeps all Docker-related files organized by component, making it easier to manage builds.
+
+Below you'll find the utilized `Dockerfile`, with some minor changes when comparing to the previously created one.
+
+```dockerfile
+# syntax=docker/dockerfile:1
+FROM gradle:8.9-jdk17-focal AS builder
+
+WORKDIR /home/gradle/gradle-tut-rest
+
+COPY ../../gradle gradle
+COPY ../../gradlew gradlew
+COPY ../../build.gradle build.gradle
+COPY ../../settings.gradle settings.gradle
+
+COPY ../../src src
+
+RUN ./gradlew clean bootJar --no-daemon
+
+FROM openjdk:21-ea-21-jdk-slim AS runtime
+
+COPY --from=builder /home/gradle/gradle-tut-rest/build/libs/*.jar app.jar
+
+EXPOSE 8080
+
+CMD ["java", "-jar", "app.jar"]
+```
+
+#### `db-server` container
+In your `Dockerfile`, start by defining the **parser directive**. The **parser directive** specifies which `Dockerfile`
+syntax version to use, and is primarily required when building images with `BuildKit`.
+
+Next, the first `FROM` instruction selects the base image for the builder stage. In this case, we are using
+`openjdk:21-ea-21-jdk-slim`.
+
+Then, the first `RUN` instruction update the existing packages and install the packages you need - in this case it
+was `netcat`, and `iputils-ping`. These actions can be concatenated into a single command to reduce the number of layers 
+in the final Docker image and to ensure that the package installation occurs only after updating the
+system is updated. The second `RUN` instruction creates the directory where the H2 database files will be stored. This 
+ensures that the `PayrollDB.mv.db` file and any future database files have a valid, pre-created location for persistent 
+storage.
+
+Next, the two `COPY` instructions copy all the files needed to start the database.
+
+- `h2-2.2.224.jar`: It contains the database runtime, SQL engine, and all the libraries needed for the H2 server to 
+start inside the container.
+- `PayrollDB.mv.db`: The actual H2 database file that stores the entire contents of the `PayrollDB` database, 
+including tables, records, and schema.
+
+Then, the `VOLUME` instruction ensures that the database files are stored in the specified directory, and persist 
+outside the container’s filesystem, making restarts not losing the database data, allowing external storage backends to 
+be mounted when needed.
+
+The `EXPOSE` instruction doesn't open any port by itself; it is primarily used to documenting which ports the container  
+is expected to expose.
+
+Finally, the `CMD` instruction defines the default program that is run once you start the container based on this image.
+Each `Dockerfile` only has one `CMD` instance.
+
+For the Multi-Stage build of the Spring Boot Rest Application, your `Dockerfile` should follow the structure outlined
+below.
+
+```dockerfile
+# syntax=docker/dockerfile:1
+FROM openjdk:21-ea-21-jdk-slim
+
+RUN apt-get update && apt-get install -y netcat iputils-ping
+RUN mkdir -p /h2database/payroll/data
+
+COPY docker/db-server/h2-2.2.224.jar h2.jar
+COPY ../../CA2-Part2/PayrollDB.mv.db /h2database/payroll/data
+
+VOLUME /h2database/payroll/data
+
+EXPOSE 9092
+
+CMD ["java", "-cp", "h2.jar", "org.h2.tools.Server", "-tcp", "-tcpAllowOthers", "-tcpPort", "9092", "-baseDir", "/h2database/payroll/data"]
+```
+
+After having robust and well-structured `Dockerfile` for both the `web-app` and the `db-server`, along with a properly 
+organized `compose.yaml`, you can **build** and **run** your container using the following command:
+
+```bash
+docker compose up --build
+```
+
+- The `--build` flag forces Docker to build the images before starting the containers, ensuring that any changes in the 
+`Dockerfiles` or project files are included.
+
+After your container is running, open your web browser and navigate to `localhost:8080/employees`. Your output should
+resemble the example below:
+
+<img src="PART-II/Images/05_02.PNG" alt="spring-boot-rest-application running in separate containers"/>
+
+### Publish all images to Docker Hub
+Proceed by tagging your images because Docker Hub requires images to be tagged with using the format 
+`username/repository:tag`. Replace `username`, `repository`, and `tag` with your own values.
+
+To tag all the images you created during this part of the class assignment run the following command:
+
+```bash
+docker tag NAME:[TAG] USERNAME/REPOSITORY:[TAG]
+```
+
+To tag the images we created during this part of the class assignment we ran the following commands:
+
+```bash
+docker tag web-app devpchu01/web-app
+docker tag db-server devpchu01/db-server
+```
+
+Finally, push the images to your repository using the following command:
+
+```bash
+docker push USERNAME/REPOSITORY:[TAG]
+```
+
+To push the images to Docker Hub ran the following commands:
+
+```bash
+docker push devpchu01/web-app
+docker push devpchu01/db-server
+```
+
+Your Docker Hub repositories page should look similar to the one in the image below:
+
+<img src="PART-II/Images/06_01.PNG" alt="Docker Hub repositories page"/>
+
+The following images take are a more detailed illustration of both the `gradle_basic_demo` and the `gradle-tut-rest`
+repositories, respectively.
+
+#### web-app
+<img src="PART-II/Images/06_02.PNG" alt="web-app repository"/>
+
+#### db-server
+<img src="PART-II/Images/06_03.PNG" alt="db-server repository"/>
+
 # Alternative Technologies
 In this section you'll be introduced to some alternative technologies to Docker and how one could implement 
 **CA5-Part2**. 
@@ -823,136 +1025,284 @@ very similar, the difference between the two implementations would be minimal wi
 To conclude this class assignment, we will also give an honourable mention to **Kubernetes (K8s)**. 
 
 ## Rocket
-Rocket is an application container runtime developed for modern, cloud-native production environments. It offers a 
-pod-native approach, a pluggable execution environment, and a well-defined surface area, making it ideal for integration 
-with other systems.
+Rocket is a modern application container runtime with a focus on security for cloud-native production environments. 
+In contrast with Docker's daemon-based architecture, Rocket adopts a **daemonless** approach, with each pod **running 
+directly as a standard Unix process**. This **reduces the attack surface** and **increases transparency**, making Rocket 
+ideal for environments that require a robust isolation and consistent behavior.
 
-The central execution unit in rkt is the pod, a set of one or more applications running in a shared context (rkt pods 
-follow the same concept as Kubernetes orchestration pods). With rkt, users can apply different configurations (such as 
-isolation parameters) both at the pod level and per application for more granular control. Thanks to rkt’s architecture, 
-each pod runs directly in the classic Unix process model (i.e., without a central daemon), in an isolated and 
-independent environment.
+A key concept in Rocket is its pod-native architecture that aligns closely with Kubernetes’ orchestration model. Rocket 
+allows users to set configuration and isolation parameters at both the **pod level** and for **individual 
+applications**, providing detailed control over security, resource usage, and execution environments.
 
-rkt implements an open and modern container format standard, the App Container (appc) specification, but it can also run 
-other container images, such as those created with Docker.
-
-## Podman
-**Podman**, short for **pod manager**, is a **daemonless**, open source Linux native tool for developing, managing and 
-running containers, designed to make it easy to find, run, build, share and deploy applications using **Open Containers 
-Initiative** (**OCI**) containers and containers images. 
-
-Podman makes it an accessible, security-focused option for container management. Its accompanying tools and features, 
-such as **Buildah** and **Skopeo**, let developers customize their container environments to suit their needs. 
-
-Podman provides a command line interface (CLI) that creates and supports OCI containers, which are designed to meet 
-industry standards for container runtimes and formats. More advanced building capabilities are available in the related 
-project, Buildah. Developers can also take advantage of **Podman Desktop**, a graphical user interface (GUI) for using 
-Podman in local environments. Most users can simply alias Docker to Podman without any problems. Similar to other common 
-Container Engines, Podeman relies on an OCI compliant Container Runtime to interface with the operating system and 
-create the running containers. 
-
-This make the running containers created by Podman nearly indistinguishable from those 
-created by any other common container engine. Users can run Podman on various Linux distribution, sucha as Red Hat 
-Enterprise Linux, Fedora, CentOS and Ubuntu. Containers under the control of Podman can either be run by root or by a 
-non-privilaged user. Podman manages the entire container ecosystem which includes pods, container images, and container 
-volumes using the libpod library. Podman specializes in all the commands and functions that help to maintain and 
-modify OCI container images, such as pulling and tagging. It allows to create, run and maintain those containers and 
-container images in a production environment.
+Rocket is compatible with Docker images, allowing for flexibility and interoperability with existing ecosystems. Due to 
+its modular architecture and pluggable execution environments, Rocket can integrate seamlessly with other systems while 
+maintaining a minimal and well-defined operational surface.
 
 ### What are Pods
-Pods are groups of containers that run together and share the same resources, similar to Kubernetes pods. Podman manages 
-these pods via a simple CLI and the libpod library, which provides application programming interfaces (APIs) for 
-managing containers, pods, container images and volumes.
+A **Pod** is the smallest deployable and executable unit in several modern container runtimes and orchestration systems.
+Instead of running a single container in complete isolation, a pod groups one or more containers that are meant to run 
+together, share certain resources, and jointly deliver a single logical function. 
 
-Each pod is composed of one infra container and any number of regular containers. The infra container keeps the pod 
-running and maintains user namespaces, which isolate containers form the host. The other containers each have a monitor 
-to keep track of their processes and look out for dead containers, nonfunctioning containers that can not be taken outo 
-of the environment because some of their resources are still being used.
+Pods exist because applications often consist of multiple closely related processes that need to share environment 
+settings, communicate efficiently, or operate within the same execution context.
+
+Containers were treated as tiny virtual machines that run one application. However, real-world workloads often require:
+- Helper processes.
+- Logging.
+- Monitoring.
+- Proxying.
+- Tightly coupled microservices.
+- Shared storage.
+- Shared networking.
+
+Running each one as a separate, fully isolated container and creates unnecessary complexity. Pods solve this by bundling 
+these components together.
+
+### Comparison between Docker and Rocket
+<table>
+  <thead>
+    <tr>
+      <th><strong>Aspect</strong></th>
+      <th><strong>Docker</strong></th>
+      <th><strong>Rcoket</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Purpose</strong></td>
+      <td>General-purpose container platform for building, shipping, and running apps.</td>
+      <td>Designed for modern, cloud-native production environments with strong security and modularity.</td>
+    </tr>
+    <tr>
+      <td><strong>Architecture</strong></td>
+      <td>Uses a <strong>central daemon</strong> (<code>dockerd</code>) to manage containers.</td>
+      <td><strong>Daemonless</strong> architecture; Pods run as standard Unix processes for better isolation.</td>
+    </tr>
+    <tr>
+      <td><strong>Execution Model</strong></td>
+      <td>Container-based; Each container runs a single application.</td>
+      <td>Pod-based; Supports multiple applications sharing a single execution context (Kubernetes-style).</td>
+    </tr>
+    <tr>
+      <td><strong>Image Format</strong></td>
+      <td>Docker Image format.</td>
+      <td>Implements the App Container (appc) specification, but can also run Docker images.</td>
+    </tr>
+    <tr>
+      <td><strong>Integration</strong></td>
+      <td>Strong integration with Docker ecosystem, Docker Hub, and Docker tooling.</td>
+      <td>Designed for easy integration with orchestration systems like Kubernetes.</td>
+    </tr>
+    <tr>
+      <td><strong>Security</strong></td>
+      <td>Relies on namespaces and cgroups; Daemon introduces an additional attack surface.</td>
+      <td>Smaller attack surface due to daemonless design; Strong per-pod isolation.</td>
+    </tr>
+    <tr>
+      <td><strong>Flexibility</strong></td>
+      <td>Primarily focused on Docker workflows and tooling.</td>
+      <td>Pluggable execution environments; More modular for custom setups.</td>
+    </tr>
+    <tr>
+      <td><strong>Popularity</strong></td>
+      <td>Extremely popular and widely adopted across industries.</td>
+      <td>Less popular; Considered a niche solution for specific cloud-native use cases.</td>
+    </tr>
+  </tbody>
+</table>
+
+## Podman
+**Podman**, short for **pod manager**, is a **daemonless**, open source Linux-native container engine for developing, 
+running and managing containers that follows the **Open Containers Initiative** (**OCI**) standard. 
+
+Designed as a **secure alternative to Docker**, Podman works closely with **Buildah** (to build images) and **Skopeo** 
+(to move/manipulate images), forming a modular ecosystem.
+
+Because Podman implements the Docker CLI and is OCI-compliant
+
+- Most users can alias `docker -> podman` without changes.
+- Images built and run with Podman behave the same as Docker’s.
+- Containers can run as root or rootless, greatly improving security.
+
+Podman uses the `libpod` library to manage:
+
+- Pods
+- Container images
+- Container execution
+- Volumes
+- Networking
+
+### Buildah
+**Buildah** is a **command-line tool** used to create, build, and modify OCI-compatible container images.
+
+It allows image creation with or without `Dockerfiles` and is fully OCI and Docker compatible.
+
+**Key capabilities**:
+- Build images **from scratch** or **from existing base images**.
+- Build using `Dockerfiles` or via direct commands.
+- Build images rootlessly, improving security.
+- Produce smaller and more optimized images.
+
+Buildah **is ideal for CI/CD pipelines**, **automated builds**, and **security-sensitive environments**.
+
+### Skopeo
+Skopeo is a utility for **inspecting**, **copying**, **deleting**, and **signing container images** **without requiring 
+a local daemon and without pulling images locally**.
+
+Before Skopeo existed:
+- Inspecting an image required pulling it completely.
+- Copying from one registry to another required saving, retagging, pushing, etc.
+
+With Skopeo, you can:
+- Inspect remote images instantly (skopeo inspect docker://registry/image)
+- Copy images registry-to-registry directly
+- Delete images from registries
+- Synchronize entire repositories
+- Sign and verify images
+- Move images between storage locations without Docker or Podman
+
+Skopeo works alongside Podman and Buildah:
+- Buildah builds images
+- Podman runs images
+- Skopeo transfers images
 
 ### Podman Desktop
-Podman Desktop is a GUI for Podman, which provides a central place for developers to work with containers on the laptop
-or workstation. Developers can build, push and pull images and manage Podman resources directly using a GUI that is
-consistent across local Linux, Windows and MacOS environments. Podman Desktop also lets developers deliver
-ready-to-deploy containerized applications to Kubernets environments. Podman Desktop supports extension packs, which
-open up additional capabilities.
+Podman Desktop provides a **Graphical User Interface** (**GUI**) for interacting with Podman containers, images, pods, 
+and registries across Linux, Windows, and macOS. It supports extensions and makes Kubernetes deployment more accessible.
 
-### Podman, Buildah and Skopeo
-Podman is a modular container engine, so it must work alongside tools like Buildah and Skopeo to build and move
-containers.
+### Podman, Buildah and Skopeo together
+Podman’s modular architecture means it delegates tasks.
 
-With Buildah, it is possible build containers either from scratch or by using an image as a starting point. Skope moves
-container images between differente types of storage systems, allowing you to copy images between registries like
-docker.io, quay.io and internal registry or between different types of storage on the local system. This modular
-approach to containerization results in a flexible, lightweight environment by reducing overhead and isolating the
-features that is needed. Working with containers make it possible to use smaller, more modular tools that can focus on
-a single purpose and be updated as often as needed.
+<table>
+  <thead>
+    <tr>
+      <th>Task</th>
+      <th>Tool</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Build container images</td>
+      <td><strong>Buildah</strong></td>
+    </tr>
+    <tr>
+      <td>Run/manage containers</td>
+      <td><strong>Podman</strong></td>
+    </tr>
+    <tr>
+      <td>Move/copy/sign images</td>
+      <td><strong>Skopeo</strong></td>
+    </tr>
+  </tbody>
+</table>
 
-Podman and Buildah use runC, the OCI runtime, by default to launch containers. Can use runC to build and run an image
-or can use it to run Docker-formatted images. This language-based tool reads a runtie specification, configures the
-Linux kernel and eventually creates and starts container processes.
+This model avoids the “single giant daemon” approach used by Docker, improving:
+- Security
+- Performance
+- Flexibility
+- Maintainability
 
-### What makes Podman different from other container engines
-Podman stands out from other container engines because it is daemonless, meaning it does not rely on a process with root 
-privileges to run containers.
+### Why is Podman different from Docker
+The key difference: **Podman is daemonless**.
 
-Daemons are processes that run int the background of the system to do the work of running containers without a user 
-interface. Daemons can be associated as the intermediary communicating between the user and the container.
+**Docker requires**:
+- A privileged system-wide daemon (`dockerd`)
+- Root permissions for many actions
 
-While daemons can be a convenient way to manage your container environment, this can also introduce security 
-vulnerabilities. Many daemons run with root privileges. In Linux systems, the root account acts as a superuser with 
-administrative access, while bypassing the need for administrator verification, to read files, install programs, edit 
-applications and more. This makes daemons an ideal target for hackers who want to gain control of the containers and 
-infiltrate the host system.
+**Podman**:
+- Requires no daemon
+- Supports fully rootless containers
+- Uses `systemd` to run containers in the background
+- **Is more secure by design**
 
-Podman cuts out the daemon and lets regular users run containers without interacting with a root-owned daemon or allows 
-for the use of rootless containers. By going rootless, users can create, run and manage containers without requiring 
-processes with admin privileges, making the container environment more accessible while reducing security risks. 
-Additionally, Podman launches each container with a Security-Enhance Linux, SELinux label, gibing administrators more 
-control over what resources and capabilities are provided to container processes.
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Docker</th>
+      <th>Podman</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Runs on a daemon</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>Rootless containers</td>
+      <td>Recently added</td>
+      <td>Native</td>
+    </tr>
+    <tr>
+      <td>Build tool</td>
+      <td>Built-in</td>
+      <td>Buildah</td>
+    </tr>
+    <tr>
+      <td>Image transferring</td>
+      <td>Docker CLI</td>
+      <td>Skopeo</td>
+    </tr>
+    <tr>
+      <td>Operates with pods</td>
+      <td>No</td>
+      <td>Yes (Kubernetes-like pods)</td>
+    </tr>
+    <tr>
+      <td>Docker-compatible CLI</td>
+      <td>N/A</td>
+      <td>Yes</td>
+    </tr>
+  </tbody>
+</table>
 
-### How does Podman manage containers
-Users can invoke Podman from the command line to pull containers from a repository and run that. Podman calls the 
-configured container runtime to create the running container, but without a dedicated daemon, Podman uses system, a 
-system and service manager for Linux operating systems, to make updates ad keep containers running in the background. By 
-integrating system and Podman, it is possible to generate control units for the containers and run them with system 
-automatically enabled.
-
-Users can control the automatic starting and managing of their containers through their own repositories on the system 
-or using system units. Allowing users to manage their own resources and running containers rootless, can remove the 
-temptation to add privileges like write access to areas of the system that should not have. This also ensures that every 
-user has separate sets of containers and images and can use Podman concurrently on the same host without interfering 
-with each other. When users finish their work, they can push changes to a common registry to share their image with 
-others.
-
-Podman also deploys a RESTful API to manage containers. REST stands for representational state transfer. A REST API is 
-an API that conforms to the containers of REST architecture style and allows for interaction with RESTful web services.
-
-### Podman vs Docker
-The main difference between Podman and Docker is Podman’s daemonless architecture. Podman containers have always been 
-rootless, while Docker only recently added a rootless mode to its daemon configuration. Docker is an all-in-one tool for 
-container creation and management, whereas Podman and its associates tools like Buildah and Skopeo are more specialized 
-for specific aspects of containerization. This makes it possible to customize the environment whit only the tools 
-needed.
-
-Podman is a powerful alternative to Docker, but the two can also work together. Users can easily switch between them by 
-aliasing Docker to Podman and vice versa. Additionally, an rpm called podman-docker can drop a “docker” into the system 
-application path, which calls Podman for those environments where the docker command is needed, easing the transition 
-form Docker. Podman’s CLI is similar to Docker’s, so users who familiar with one are likely to have success with the 
-other. Some developers combine Podman and Docker, using Docker during the development stage and transferring the program 
-to Podman in runtime environments.
-
-### Why Podman
-Podman changed the container landscape by offering the same high-performance capabilities as leading container engines, but with the flexibility, accessibility and security features that many development teams are seeking. Podman can help with:
-
-- Manage container images and the full container lifecycle, including running, networking, checkpointing and removing containers.
-- Run and isolate resources for rootless containers and pods.
-- Support OCI and Docker images as well as a Docker-compatible CLI.
-- Create a daemonless environment to improve security and reduce idle resource consumption.
-- Deploy a REST API to support Podman’s advanced functionality.
-- Implement checkpoint/restore functionality for Linux containers with Checkpoint/Restore in Userspace, CRIU. CRIU can freeze a running container and save its memory contents and state to disk so that containerized workloads can be restarted faster.
-- Automatically update containers. Podman detects if an updated container fails to start and automatically rolls back to the last working version. This provides new levels of reliability for applications.
+Podman can be used as a drop-in Docker alternative, but it is also more flexible, more secure, and more aligned with
+Kubernetes concepts.
 
 ### Implementation
+Since Podman natively supports both traditional `Dockerfiles` and `compose.yaml` files, we were able to keep the exact 
+same files but changed the commands used to build, run, and push our container. No modifications to the `Dockerfiles` or 
+the `compose.yaml` file were required.
+
+#### Building and running containers with Podman
+Instead of using the command `docker compose up --build` we utilized the command `podman-compose up --build`. 
+
+This offers some advantages:
+- **Buildah** is used under the hood to build the container images securely and rootlessly.
+- Podman runs the containers, improving runtime security.
+- No daemon is required.
+ 
+The result is the same development workflow, but with more modularity and security.
+
+#### Pushing images with Skopeo
+Instead of tagging and pushing images with Docker we used Skopeo, which can transfer images directly from local storage 
+to a remote registry without tagging and loading them into a daemon.
+
+Instead of using the following Docker commands:
+
+```bash
+docker tag web-app devpchu01/web-app
+docker tag db-server devpchu01/db-server
+docker push devpchu01/web-app
+docker push devpchu01/db-server
+```
+
+We utilized the following Skopeo commands:
+```bash
+skopeo copy containers-storage:localhost/web-app docker://devpchu01/web-app
+skopeo copy containers-storage:localhost/db-server docker://devpchu01/db-server
+```
+
+##### Why is this approach better
+1. Skopeo copies images directly between locations and registries, what makes tagging becomes **optional instead of 
+mandatory**.
+2. While Docker requires `dockerd` to store, tag, and push images, Skopeo operates directly on OCI images without Docker 
+or Podman running
+3. Skopeo does not pull or push through an intermediate daemon, it copies directly from the local storage to the 
+registry, reducing overhead and avoiding root-level daemon access.
+4. Skopeo supports registry credentials, private registries, and TLS and custom CA certificates.
+5. Skopeo is for CI/CD environments, because it can sync entire registries and operate without local image storage.
 
 ## Kubernetes
 **Kubernetes**, referred to as **K8s**, is an **open-source system for container orchestration** designed to **automate 
@@ -973,7 +1323,7 @@ Kubernetes clusters. kubeadm focuses only on cluster bootstrapping, not on machi
 applications, inspect and manage cluster resources, and view logs.
 
 ### Kubernetes and Docker: complementary tools, not competitors
-**Docker** and **K8s** are frequently misrepresented as competitors, yet **they serve different purposes** in the 
+**Docker** and **K8s** are frequently misrepresented as competitors, yet **they serve different purposes** in the
 containerization environment! While both deal with containers, their functions in the development and deployment 
 pipeline are distinct and complementary. 
 
@@ -1006,7 +1356,7 @@ faster release cycles.
 
 # Self-Evaluation
 ```bash
-Daniel (12500503) - ??%
-Diogo (1250506) - ??%
+Daniel (12500503) - 80%
+Diogo (1250506) - 80%
 Pedro (1250545) - 100%
 ```
