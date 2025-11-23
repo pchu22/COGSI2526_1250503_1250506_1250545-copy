@@ -2,7 +2,16 @@
 This class assignment will teach you how to work with containerization tools. As a container orchestration tool we will 
 be using **Docker**.
 
-Docker is
+Docker is an **open-source** platform that automates the **deployment of applications inside lightweight**, **portable 
+containers**. A container encapsulate everything needed to consistently run an application across different 
+environments.
+
+Unlike virtual machines, Docker containers share the host operating system's kernel, providing operating-system-level 
+virtualization that is **faster** and more **resource-efficient**. This allows developers to **build**, **test**, 
+**deploy**, and **run applications quickly and reliably**, solving the "it works on my machine" problem.
+
+Docker uses a **client-server architecture**, with the **Docker Engine managing containers**, **images**, **networks**, 
+and **olumes**, and **Docker Desktop** providing an **easy-to-install** environment for development.
 
 ### Docker Desktop
 **Docker Desktop** is a one-click-install application for Mac, Linux, or Windows environment that lets you build, 
