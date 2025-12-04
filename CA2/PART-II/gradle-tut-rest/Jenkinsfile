@@ -3,20 +3,20 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh './gradlew bootRun'
+                bat './gradlew.bat bootRun'
             }
         }
 
         stage('Test') {
             steps {
-                sh './gradlew test'
+                bat './gradlew.bat test'
                 junit 'build/test-results/test/*.xml'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh './gradlew publish'
+                bat './gradlew.bat publish'
             }
         }
     }
