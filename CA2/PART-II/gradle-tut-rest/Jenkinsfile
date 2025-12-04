@@ -3,20 +3,26 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                bat 'gradlew.bat bootRun'
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    bat 'gradlew.bat bootRun'
+                }
             }
         }
 
         stage('Test') {
             steps {
-                bat 'gradlew.bat test'
-                junit 'build/test-results/test/*.xml'
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    bat 'gradlew.bat test'
+                    junit 'build/test-results/test/*.xml'
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                bat 'gradlew.bat publish'
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    bat 'gradlew.bat publish'
+                }
             }
         }
     }
