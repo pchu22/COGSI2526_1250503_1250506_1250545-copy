@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                sh './gradlew build'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh './gradlew test'
+                junit 'build/test-results/test/*.xml'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh './gradlew publish'
+            }
+        }
+    }
+}
