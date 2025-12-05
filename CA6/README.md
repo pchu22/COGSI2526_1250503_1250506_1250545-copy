@@ -1,14 +1,17 @@
-# CA 6
-For this class assignment you'll have to 
+# CA 6 - CI/CD Pipelines
+This class assignment (CA) will focus on designing and implementing CI/CD pipelines utilizing **Jenkins**, combined with 
+automated infrastructure provisioning using **Vagrant** and **Ansible**. 
 
-### Jenkins
+You'll build the CI/CD Pipelines using concepts learned in previous CAs (specifically CA3 and CA5).
+
+## Jenkins
 Jenkins is a self-contained, open source automation server which can be used to automate all sorts of tasks related to 
 building, testing, and delivering or deploying software.
 
 Jenkins can be installed through native system packages, Docker, or even run standalone by any machine with a Java 
 Runtime Environment (JRE) installed.
 
-#### Installing Jenkins
+### Installing Jenkins
 
 ## Part I
 The goal of the first part of CA6 is to create a pipeline that builds the Gradle version of the Building REST services 
@@ -23,16 +26,105 @@ The "first version" of your `playbook.yaml` should deploy the current version of
 **blue** machine.
 
 ## Define the Pipeline Logic
-Create a `Jenkinsfile`, where all the **pipeline logic** is stored. **Define the following stages in your Jenkins 
-pipeline**:
+You will implement all the CI/CD automation for this CA using a `Jenkinsfile`, stored at the **root** of your 
+application. This file defines the workflow executed by Jenkins whenever the pipeline is triggered.
 
-1. **Checkout** – Pull the latest source code from the development branch in your repository.
-2. **Assemble** – Compile the code and produce the artifact files.
+The goal is to model a full build-and-deploy pipeline that compiles the Spring Boot Rest Application, **verifies it 
+through automated tests**, **archives the artifacts**, and **deploys it to the green VM** using `Ansible`.
+
+To structure the pipeline, you must include the following stages:
+
+1. **Checkout** - This stage pulls the latest source code from your repository's **main** branch, ensuring Jenkins 
+always builds the **most up-to-date version** of the Spring Boot Rest Application.
+
+2. **Assemble** – In this stage, Jenkins compiles the project using `Gradle`, producing the executable artifact. The 
+assembly process verifies that the code compiles successfully and that all dependencies are correctly defined.
+
 3. **Test** – Run unit tests to verify the application’s correctness. Publish the test results in Jenkins.
+
 4. **Archive** – Archive the artifacts in Jenkins for later use.
+
 5. **Deploy to Production** – Request manual approval to deploy the application to the production environment. Only 
 proceed if the deployment is approved.
+
 6. **Deploy** – Uses an Ansible playbook to deploy and start the application on the green VM.
+
+Below you will find a `Jenkinsfile` you can use as example to achieve the pretended result.
+
+```bash
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Pulling source code..."
+
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']]
+                ])
+            }
+        }
+
+        stage('Assemble') {
+            steps {
+                echo "Building project..."
+
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    script {
+                        if (isUnix()) {
+                            sh './gradlew bootRun'
+                        }
+                        else {
+                            bat 'gradlew.bat bootRun'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running test..."
+
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    script {
+                        if (isUnix()) {
+                            sh './gradlew test'
+                        }
+                        else {
+                            bat 'gradlew.bat test'
+                        }
+                    }
+                    junit 'CA2/PART-II/gradle-tut-rest/build/test-results/test/*.xml'
+                }
+            }
+        }
+
+         stage('Archiving') {
+            steps {
+                echo 'Archiving artifacts...'
+
+                archiveArtifacts 'CA2/PART-II/gradle-tut-rest/build/libs/*.jar'
+            }
+         }
+
+
+         stage('Deploy to Production') {
+            steps {
+                script {
+                    timeout(time: 60, unit: 'SECONDS') {
+                        input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')
+                    }
+                }
+
+                echo "Deploying to production..."
+            }
+         }
+    }
+}
+```
 
 ### Tag Stable Builds
 Tag stable builds in Jenkins using a consistent naming convention - e.g., `stable-v1.0`, `stable-v1.1`.
@@ -45,9 +137,24 @@ Include the following post-actions in your pipeline:
 2. **Deployment Verification** – Add automated health-checks after deployment to verify that the application is 
 functioning correctly in production
 
+Below you will find the utilized `post-actions` on the `Jenkinsfile`. You can use these `post-action` as an example to 
+achieve the pretended result.
+
+```bash
+    post {
+        success {
+            echo "Build succeeded!"
+        }
+
+        failure {
+            echo "Build failed!"
+        }
+    }
+```
+
 ## Rollback to Previous Versions
 Create an Ansible `playbook` to roll back to a previous stable version of the Spring Boot Rest Application stored as an 
-artifact in Jenkins. The `playbook.yamp` should automate the rollback process by retrieving the artifact from Jenkins 
+artifact in Jenkins. The `playbook.yaml` should automate the rollback process by retrieving the artifact from Jenkins 
 and deploying it to the **green** VM.
 - Connect to Jenkins using the `Jenkins API` or `CLI` to **download the tagged artifact**.
 - Stop the application currently running on the **green** VM, ensuring the resources in use are properly released.
