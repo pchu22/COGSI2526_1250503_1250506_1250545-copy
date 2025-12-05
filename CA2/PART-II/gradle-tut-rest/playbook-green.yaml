@@ -1,0 +1,86 @@
+---
+- name: Provision the green VM
+  hosts: green
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      apt:
+        name: default-jre
+        state: present
+
+    - name: Install JDK
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+#    - name: Ensure if the repository exists
+#      stat:
+#        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/.git
+#      register: repo_status
+#
+#    - name: Clone the Git repository
+#      git:
+#        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+#        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+#        version: main
+#        update: no
+#      register: git_clone
+#      when: not repo_status.stat.exists
+#
+#    - name: Pull from the Git repository
+#      git:
+#        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+#        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+#        version: main
+#        update: yes
+#        force: yes
+#      register: git_pull
+#      when: git_clone is not changed or git_clone is skipped
+#
+#    - name: Repository clone debug message
+#      debug:
+#        msg: "Repository successfully cloned!"
+#      when: git_clone.changed
+#
+#    - name: Repository existence debug message
+#      debug:
+#        msg: "Repository already exists. Skipping clone.."
+#      when: git_clone is skipped
+#
+#    - name: Up-to-dated project debug message
+#      debug:
+#        msg: "Repository successfully updated!"
+#      when: not git_pull.changed
+#
+#    - name: Ensure project directory has the right ownership
+#      file:
+#        path: /home/vagrant/COGSI2526_1250503_1250506_1250545
+#        state: directory
+#        owner: vagrant
+#        group: vagrant
+#
+#    - name: Ensure gradlew has correct permissions
+#      file:
+#        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/gradlew
+#        state: file
+#        owner: vagrant
+#        group: vagrant
+#        mode: '0744'
+#
+#    - name: Run Spring Boot Rest Application
+#      shell: |
+#        ./gradlew bootRun &
+#      args:
+#        chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
