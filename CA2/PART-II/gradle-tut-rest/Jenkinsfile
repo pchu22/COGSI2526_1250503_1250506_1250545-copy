@@ -1,29 +1,82 @@
 pipeline {
     agent any
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
+                echo "Pulling source code..."
+
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']]
+                ])
+            }
+        }
+
+        stage('Assemble') {
+            steps {
+                echo "Building project..."
+
                 dir('CA2/PART-II/gradle-tut-rest') {
-                    bat 'gradlew.bat bootRun'
+                    script {
+                        if (isUnix()) {
+                            sh './gradlew bootRun'
+                        }
+                        else {
+                            bat 'gradlew.bat bootRun'
+                        }
+                    }
                 }
             }
         }
 
         stage('Test') {
             steps {
+                echo "Running test..."
+
                 dir('CA2/PART-II/gradle-tut-rest') {
-                    bat 'gradlew.bat test'
-                    junit 'build/test-results/test/*.xml'
+                    script {
+                        if (isUnix()) {
+                            sh './gradlew test'
+                        }
+                        else {
+                            bat 'gradlew.bat test'
+                        }
+                    }
+                    junit 'CA2/PART-II/gradle-tut-rest/build/test-results/test/*.xml'
                 }
             }
         }
 
-        stage('Deploy') {
+         stage('Archiving') {
             steps {
-                dir('CA2/PART-II/gradle-tut-rest') {
-                    bat 'gradlew.bat publish'
-                }
+                echo 'Archiving artifacts...'
+
+                archiveArtifacts 'CA2/PART-II/gradle-tut-rest/build/libs/*.jar'
             }
+         }
+
+
+         stage('Deploy to Production') {
+            steps {
+                script {
+                    timeout(time: 60, unit: 'SECONDS') {
+                        input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')
+                    }
+                }
+
+                echo "Deploying to production..."
+            }
+         }
+    }
+
+    post {
+        success {
+            echo "Build succeeded!"
+        }
+
+        failure {
+            echo "Build failed!"
         }
     }
 }
