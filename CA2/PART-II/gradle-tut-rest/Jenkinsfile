@@ -42,7 +42,7 @@ pipeline {
                             bat 'gradlew.bat test'
                         }
                     }
-                    junit 'CA2/PART-II/gradle-tut-rest/build/test-results/test/*.xml'
+                    junit 'build/test-results/test/*.xml'
                 }
             }
         }

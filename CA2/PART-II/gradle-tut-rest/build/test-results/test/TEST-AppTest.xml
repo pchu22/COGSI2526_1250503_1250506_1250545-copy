@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AppTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-12-05T16:28:18" hostname="DESKTOP-SDTA0AS" time="0.058">
+  <properties/>
+  <testcase name="contextLoads()" classname="AppTest" time="0.058"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
