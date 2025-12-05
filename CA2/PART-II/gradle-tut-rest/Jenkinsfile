@@ -72,11 +72,13 @@ pipeline {
             steps {
                 echo "Uploading Artifacts..."
 
-                script {
-                    if (isUnix()) {
-                        sh './gradlew publish'
-                    } else {
-                        bat 'gradlew.bat publish'
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    script {
+                        if (isUnix()) {
+                            sh './gradlew publish'
+                        } else {
+                            bat 'gradlew.bat publish'
+                        }
                     }
                 }
             }
