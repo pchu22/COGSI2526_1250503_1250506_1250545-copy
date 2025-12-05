@@ -5,54 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e68b77ef-c1d0-4300-85ff-c8ff3add2cbf" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gradle/8.9/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.9/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.9/fileHashes/resourceHashesCache.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/fileHashes/resourceHashesCache.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/bundler/global.sol" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/action_cloud_init" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/action_provision" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/action_set_name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/box_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/creator_uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/disk_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/id" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/index_uuid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/synced_folders" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/blue/virtualbox/vagrant_cwd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/action_cloud_init" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/action_provision" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/action_set_name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/box_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/creator_uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/disk_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/id" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/index_uuid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/synced_folders" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db-server/virtualbox/vagrant_cwd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/db/virtualbox/vagrant_cwd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_cloud_init" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_provision" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_set_name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/box_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/creator_uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/disk_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/id" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/index_uuid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/synced_folders" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/vagrant_cwd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/action_cloud_init" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/action_provision" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/action_set_name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/box_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/creator_uid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/disk_meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/id" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/index_uuid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/synced_folders" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/machines/web-app/virtualbox/vagrant_cwd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.vagrant/rgloader/loader.rb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Vagrantfile" beforeDir="false" afterPath="$PROJECT_DIR$/Vagrantfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../CA6/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../../CA6/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/libs/gradle-tut-rest-1.1.0.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/resolvedMainClassName" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/resources/main/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/build/resources/main/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/tmp/bootJar/MANIFEST.MF" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
