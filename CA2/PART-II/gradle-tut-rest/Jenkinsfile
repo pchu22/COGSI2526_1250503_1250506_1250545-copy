@@ -76,7 +76,7 @@ pipeline {
 
             script {
                 def response = sh(
-                    script: "curl -s -o /dev/null -w '%{http_code}' https://yourapp.example.com/health",
+                    script: "curl -s -o /dev/null -w '%{http_code}' http://192.168.56.10:8082/employees",
                     returnStdout: true
                 ).trim()
 
