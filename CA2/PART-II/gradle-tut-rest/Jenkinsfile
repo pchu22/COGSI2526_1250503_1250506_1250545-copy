@@ -66,9 +66,15 @@ pipeline {
                     }
                 }
 
-                sh """
-                    ansible-playbook -i playbook-green.yaml
-                """
+                if (isUnix()){
+                    sh """
+                        ansible-playbook -i playbook-green.yaml
+                    """
+                } else {
+                    powershell """
+                        ansible-playbook -i playbook-green.yaml
+                    """
+                }
             }
          }
     }
