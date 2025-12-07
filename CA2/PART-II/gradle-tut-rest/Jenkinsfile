@@ -78,16 +78,15 @@ pipeline {
                 def response = ''
 
                 if (isUnix()) {
-                    sh(
-                        script: "curl -s -o /dev/null -w '%{http_code}' http://192.168.56.10:8082/employees",
-                        returnStdout: true
-                    ).trim()
+                    sh "
+                        curl -s -o /dev/null -w '%{http_code}' http://192.168.56.10:8082/employees
+                    "
                 } else {
-                    bat(
-                        script: "powershell -Command \"(Invoke-WebRequest -Uri 'http://192.168.56.10:8082/employees' -UseBasicParsing).StatusCode\"",
-                        returnStdout: true
-                    ).trim()
+                    bat "
+                        (Invoke-WebRequest -Uri 'http://192.168.56.10:8082/employees' -UseBasicParsing).StatusCode
+                    "
                 }
+                
                 if (response != '200') {
                     error("Deployment verification failed! Status code: ${response}")
                 } else {
