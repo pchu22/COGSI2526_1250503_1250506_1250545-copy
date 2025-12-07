@@ -8,7 +8,7 @@ pipeline {
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
-                    userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']]
+                    userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']],
                     gitTool: isUnix() ? 'DefaultLinuxGit' : 'DefaultWindowsGit'
                 ])
             }
