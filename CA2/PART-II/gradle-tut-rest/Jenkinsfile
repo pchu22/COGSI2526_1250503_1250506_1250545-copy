@@ -78,15 +78,17 @@ pipeline {
                 def response = ''
 
                 if (isUnix()) {
-                    sh """
-                        curl -s -o /dev/null -w '%{http_code}' http://192.168.56.10:8082/employees
-                    """
+                    response = sh(
+                        script: "curl -s -o /dev/null -w '%{http_code}' http://192.168.56.10:8082/employees",
+                        returnStdout: true
+                    ).trim()
                 } else {
-                    bat """
-                        curl http://192.168.56.10:8082/employees
-                    """
+                    response = bat(
+                        script: 'curl -s -o NUL -w "%{http_code}" http://192.168.56.10:8082/employees',
+                        returnStdout: true
+                    ).trim()
                 }
-                
+
                 if (response != '200') {
                     error("Deployment verification failed! Status code: ${response}")
                 } else {
