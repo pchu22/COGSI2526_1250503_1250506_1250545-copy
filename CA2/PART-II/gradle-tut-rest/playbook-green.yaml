@@ -9,7 +9,8 @@
       apt:
         update_cache: yes
         cache_valid_time: 3600
-
+        force_apt_get: yes
+        
     - name: Install Git
       package:
         name: git
@@ -61,20 +62,20 @@
         pkill -f "gradlew.bat bootRun" || true
       ignore_errors: yes
 
-    - name: Start application with bootRun in background
-      shell: |
-        cd gradle-tut-rest
-          ./gradlew bootRun
-      async: 5
-      poll: 0
-
-    - name: Wait for app to start
-      uri:
-        url: http://localhost:8080/actuator/health
-        method: GET
-        return_content: no
-        status_code: 200
-      register: health
-      retries: 10
-      delay: 3
-      until: health.status == 200
+#    - name: Start application with bootRun in background
+#      shell: |
+#        cd gradle-tut-rest
+#          ./gradlew bootRun
+#      async: 5
+#      poll: 0
+#
+#    - name: Wait for app to start
+#      uri:
+#        url: http://localhost:8080/actuator/health
+#        method: GET
+#        return_content: no
+#        status_code: 200
+#      register: health
+#      retries: 10
+#      delay: 3
+#      until: health.status == 200

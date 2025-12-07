@@ -4,7 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e68b77ef-c1d0-4300-85ff-c8ff3add2cbf" name="Changes" comment="" />
+    <list default="true" id="e68b77ef-c1d0-4300-85ff-c8ff3add2cbf" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_cloud_init" beforeDir="false" afterPath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_cloud_init" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_provision" beforeDir="false" afterPath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_provision" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_set_name" beforeDir="false" afterPath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/action_set_name" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/id" beforeDir="false" afterPath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/id" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/index_uuid" beforeDir="false" afterPath="$PROJECT_DIR$/.vagrant/machines/green/virtualbox/index_uuid" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/playbook-green.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/playbook-green.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/playbook.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/playbook.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../CA6/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../../CA6/README.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

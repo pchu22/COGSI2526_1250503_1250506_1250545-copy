@@ -81,6 +81,6 @@
 
     - name: Run Spring Boot Rest Application
       shell: |
-        ./gradlew bootRun &
+        ./gradlew bootRun
       args:
         chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/

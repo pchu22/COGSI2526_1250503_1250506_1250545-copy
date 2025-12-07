@@ -62,7 +62,8 @@ pipeline {
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
-                    userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']]
+                    userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']],
+                    gitTool: isUnix() ? 'DefaultLinuxGit' : 'DefaultWindowsGit'
                 ])
             }
         }
@@ -74,10 +75,10 @@ pipeline {
                 dir('CA2/PART-II/gradle-tut-rest') {
                     script {
                         if (isUnix()) {
-                            sh './gradlew bootRun'
+                            sh './gradlew clean build'
                         }
                         else {
-                            bat 'gradlew.bat bootRun'
+                            bat 'gradlew.bat clean build'
                         }
                     }
                 }
@@ -92,12 +93,11 @@ pipeline {
                     script {
                         if (isUnix()) {
                             sh './gradlew test'
-                        }
-                        else {
+                        } else {
                             bat 'gradlew.bat test'
                         }
                     }
-                    junit 'CA2/PART-II/gradle-tut-rest/build/test-results/test/*.xml'
+                    junit 'build/test-results/test/*.xml'
                 }
             }
         }
@@ -113,18 +113,56 @@ pipeline {
 
          stage('Deploy to Production') {
             steps {
+                echo "Deploying to production..."
+
                 script {
                     timeout(time: 60, unit: 'SECONDS') {
                         input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')
                     }
                 }
-
-                echo "Deploying to production..."
             }
          }
     }
 }
 ```
+
+The `Checkout` stage is responsible for pulling the latest source code from the remote repository into the Jenkins 
+workspace. It begins by printing a message to the console indicating that the checkout process is starting. The checkout 
+step uses the **Git SCM plugin** to interact with the repository and is configured to ensure the correct branch and 
+repository are used, while also handling differences between operating systems.
+
+- `$class: 'GitSCM'`: Specifies that the **Git Source Control Management** plugin is being utilized.
+- `branches: [[name: '*/main']]`: Indicates the checkout branch.
+- `userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']]`: Defines the remote 
+repository URL to pull the code from.
+- `gitTool: isUnix() ? 'DefaultLinuxGit' : 'DefaultWindowsGit'`: Dynamically selects the Git executable based on the 
+agent's operating system.
+
+The `Assemble` stage is responsible for building the project. It prints a message to indicate that the build is 
+starting. The `dir` block navigates to the `CA2/PART-II/gradle-tut-rest` directory where the Gradle project is located. 
+Inside a **script** block, the pipeline dynamically chooses the command depending on the agent’s operating system:
+- On **Unix/Linux/macOS nodes**, it runs `sh './gradlew clean build'` to clean any previous build and assemble a fresh 
+build.
+- On **Windows nodes**, it runs `bat 'gradlew.bat clean build'` to achieve the same effect.
+
+The `Test` stage is responsible for running automated tests. It navigates to the project directory and **executes the 
+Gradle test task**:
+- On **Unix/Linux/macOS nodes**, it runs `sh './gradlew test'`.
+- On **Windows nodes**, it runs `bat 'gradlew.bat test'`.
+
+After running the tests, the junit step collects the test results from `build/test-results/test/*.xml` so that Jenkins 
+can display them in the UI. This ensures that test failures are tracked and visible in the pipeline.
+
+The `Archiving` stage handles storing the build artifacts. It prints a message to indicate archiving and then uses 
+`archiveArtifacts 'CA2/PART-II/gradle-tut-rest/build/libs/*.jar'` to save the compiled JAR files. This makes them 
+available for future stages, downloads, or deployments.
+
+Finally, the `Deploy to Production` stage is a manual approval step. It prints a message about deployment and uses a 
+timeout combined with input to pause the pipeline and request user confirmation:
+- `timeout(time: 60, unit: 'SECONDS')` ensures the input prompt will only wait for 60 seconds before failing the step if 
+nobody approves.
+- `input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')` prompts the user to approve the 
+deployment, adding a safety check before pushing changes to production.
 
 ### Tag Stable Builds
 Tag stable builds in Jenkins using a consistent naming convention - e.g., `stable-v1.0`, `stable-v1.1`.
@@ -143,6 +181,21 @@ achieve the pretended result.
 ```bash
     post {
         success {
+            echo "Running deployment verification..."
+
+            script {
+                def response = sh(
+                    script: "curl -s -o /dev/null -w '%{http_code}' https://localhost:8082/employees",
+                    returnStdout: true
+                ).trim()
+
+                if (response != '200') {
+                    error("Deployment verification failed! Status code: ${response}")
+                } else {
+                    echo "Deployment verified successfully!"
+                }
+            }
+            
             echo "Build succeeded!"
         }
 
