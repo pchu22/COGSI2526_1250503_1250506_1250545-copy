@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'linux'}
+    agent any
     stages {
         stage('Checkout') {
             steps {
@@ -66,24 +66,27 @@ pipeline {
                         input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')
                     }
                 }
-
-                script {
-                    if (isUnix()){
-                        sh """
-                            ansible-playbook -i playbook-green.yaml
-                        """
-                    } else {
-                        powershell """
-                            wsl ansible-playbook -i playbook-green.yaml
-                        """
-                    }
-                }
             }
          }
     }
 
     post {
         success {
+            echo "Running deployment verification..."
+
+            script {
+                def response = sh(
+                    script: "curl -s -o /dev/null -w '%{http_code}' https://yourapp.example.com/health",
+                    returnStdout: true
+                ).trim()
+
+                if (response != '200') {
+                    error("Deployment verification failed! Status code: ${response}")
+                } else {
+                    echo "Deployment verified successfully!"
+                }
+            }
+
             echo "Build succeeded!"
         }
 
