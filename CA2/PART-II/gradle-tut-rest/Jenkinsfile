@@ -66,14 +66,16 @@ pipeline {
                     }
                 }
 
-                if (isUnix()){
-                    sh """
-                        ansible-playbook -i playbook-green.yaml
-                    """
-                } else {
-                    powershell """
-                        ansible-playbook -i playbook-green.yaml
-                    """
+                script {
+                    if (isUnix()){
+                        sh """
+                            ansible-playbook -i playbook-green.yaml
+                        """
+                    } else {
+                        powershell """
+                            wsl ansible-playbook -i playbook-green.yaml
+                        """
+                    }
                 }
             }
          }
