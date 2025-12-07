@@ -57,9 +57,9 @@ pipeline {
 
 
          stage('Deploy to Production') {
-            echo "Deploying to production..."
-
             steps {
+                echo "Deploying to production..."
+
                 script {
                     timeout(time: 60, unit: 'SECONDS') {
                         input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')
