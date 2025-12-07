@@ -75,11 +75,19 @@ pipeline {
             echo "Running deployment verification..."
 
             script {
-                def response = sh(
-                    script: "curl -s -o /dev/null -w '%{http_code}' http://192.168.56.10:8082/employees",
-                    returnStdout: true
-                ).trim()
+                def response = ''
 
+                if (isUnix()) {
+                    sh(
+                        script: "curl -s -o /dev/null -w '%{http_code}' http://192.168.56.10:8082/employees",
+                        returnStdout: true
+                    ).trim()
+                } else {
+                    bat(
+                        script: "powershell -Command \"(Invoke-WebRequest -Uri 'http://192.168.56.10:8082/employees' -UseBasicParsing).StatusCode\"",
+                        returnStdout: true
+                    ).trim()
+                }
                 if (response != '200') {
                     error("Deployment verification failed! Status code: ${response}")
                 } else {
