@@ -25,62 +25,56 @@
         name: openjdk-17-jdk
         state: present
 
-#    - name: Ensure if the repository exists
-#      stat:
-#        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/.git
-#      register: repo_status
-#
-#    - name: Clone the Git repository
-#      git:
-#        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
-#        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
-#        version: main
-#        update: no
-#      register: git_clone
-#      when: not repo_status.stat.exists
-#
-#    - name: Pull from the Git repository
-#      git:
-#        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
-#        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
-#        version: main
-#        update: yes
-#        force: yes
-#      register: git_pull
-#      when: git_clone is not changed or git_clone is skipped
-#
-#    - name: Repository clone debug message
-#      debug:
-#        msg: "Repository successfully cloned!"
-#      when: git_clone.changed
-#
-#    - name: Repository existence debug message
-#      debug:
-#        msg: "Repository already exists. Skipping clone.."
-#      when: git_clone is skipped
-#
-#    - name: Up-to-dated project debug message
-#      debug:
-#        msg: "Repository successfully updated!"
-#      when: not git_pull.changed
-#
-#    - name: Ensure project directory has the right ownership
-#      file:
-#        path: /home/vagrant/COGSI2526_1250503_1250506_1250545
-#        state: directory
-#        owner: vagrant
-#        group: vagrant
-#
-#    - name: Ensure gradlew has correct permissions
-#      file:
-#        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/gradlew
-#        state: file
-#        owner: vagrant
-#        group: vagrant
-#        mode: '0744'
-#
-#    - name: Run Spring Boot Rest Application
-#      shell: |
-#        ./gradlew bootRun &
-#      args:
-#        chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
+    - name: Ensure project directory exists
+      file:
+        path: "gradle-tut-rest"
+        state: directory
+        mode: "0755"
+
+    - name: Copy project JAR from Jenkins host to VM
+      copy:
+        src: "CA2/PART-II/gradle-tut-rest/build/libs/*.jar"
+        dest: "gradle-tut-rest/app.jar"
+        mode: "0755"
+
+    - name: Copy gradle directory
+      copy:
+        src: "CA2/PART-II/gradle-tut-rest/gradle"
+        dest: "gradle-tut-rest/gradle"
+        mode: "0755"
+
+    - name: Copy gradlew script
+      copy:
+        src: "CA2/PART-II/gradle-tut-rest/gradlew"
+        dest: "gradle-tut-rest/gradlew"
+        mode: "0755"
+
+    - name: Copy gradlew (.bat) script
+      copy:
+        src: "CA2/PART-II/gradle-tut-rest/gradlew.bat"
+        dest: "gradle-tut-rest/gradlew.bat"
+        mode: "0755"
+
+    - name: Kill any previous bootRun instance
+      shell: |
+        pkill -f "gradlew bootRun" || true
+        pkill -f "gradlew.bat bootRun" || true
+      ignore_errors: yes
+
+    - name: Start application with bootRun in background
+      shell: |
+        cd gradle-tut-rest
+          ./gradlew bootRun
+      async: 5
+      poll: 0
+
+    - name: Wait for app to start
+      uri:
+        url: http://localhost:8080/actuator/health
+        method: GET
+        return_content: no
+        status_code: 200
+      register: health
+      retries: 10
+      delay: 3
+      until: health.status == 200

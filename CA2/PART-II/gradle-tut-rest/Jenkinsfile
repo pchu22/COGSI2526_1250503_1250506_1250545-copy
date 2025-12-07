@@ -57,6 +57,8 @@ pipeline {
 
 
          stage('Deploy to Production') {
+            echo "Deploying to production..."
+
             steps {
                 script {
                     timeout(time: 60, unit: 'SECONDS') {
@@ -64,24 +66,11 @@ pipeline {
                     }
                 }
 
-                echo "Deploying to production..."
             }
-         }
 
-         stage('Upload Artifacts') {
-            steps {
-                echo "Uploading Artifacts..."
-
-                dir('CA2/PART-II/gradle-tut-rest') {
-                    script {
-                        if (isUnix()) {
-                            sh './gradlew publish'
-                        } else {
-                            bat 'gradlew.bat publish'
-                        }
-                    }
-                }
-            }
+            sh """
+                ansible-playbook -i playbook-green.yaml
+            """
          }
     }
 
