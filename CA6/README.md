@@ -21,7 +21,7 @@ The first part of CA6 requires creating a pipeline that:
 2. Deploys the built application to a local virtual machine (VM). 
 This task mirrors the structure of Part 1 of CA3, where both the application and the H2 database run inside the same VM.
 
-## Automate Infrastructure Setup
+### Automate Infrastructure Setup
 You'll use **Vagrant** to create and manage two VMs:
 - **blue**
 - **green**
@@ -74,7 +74,7 @@ end
 The Vagrantfile begins by specifying the base box used to create all virtual machines: `bento/ubuntu-20.04`, an Ubuntu
 20.04 image maintained for development environments.
 
-### Blue VM
+#### blue VM
 Firstly, it's defined the first VM, named **blue**. This machine uses the VirtualBox provider, where its VM name is set 
 to `blue`, and it is allocated `1 GB of RAM` and `2 CPU cores`, giving it enough resources to run the Spring Boot Rest 
 Application. Networking is configured in two ways: first, a private network assigns the machine the static IP 
@@ -84,7 +84,7 @@ to port `8081` on the host.
 After networking, an Ansible provisioner is defined, instructing Vagrant to run the playbook `playbook.yaml` to 
 automatically provision the machine.
 
-### Green VM
+#### green VM
 The configuration defines the second machine, named **green**, which mirrors the structure of the blue VM but serves 
 as a parallel deployment environment. Using the VirtualBox provider, the green VM is assigned the same hardware 
 resources, and is named `green`. It also receives its own private IP address, `192.168.56.11`, and a different port 
@@ -93,7 +93,7 @@ forwarding rule, mapping its internal port `8080` to port `8083` on the host sys
 The green VM is provisioned with a separate Ansible playbook, `playbook-green.yaml`, allowing a different version or 
 configuration of the application to be deployed.
 
-### Ansible Provisioning
+#### Ansible Provisioning
 These machines must be provisioned automatically using **Ansible**. Your first version of the Ansible `playbook.yaml` 
 should deploy the current version of the Spring Boot Rest Application, targeting the **blue** VM for deployment.
 
@@ -188,7 +188,7 @@ The result can be achieved by following the steps outlined in the `playbook.yaml
         chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
 ```
 
-## Define the Pipeline Logic
+### Define the Pipeline Logic
 You will implement all the CI/CD automation for this CA using a `Jenkinsfile`, stored at the **root** of your 
 application. This file defines the workflow executed by Jenkins whenever the pipeline is triggered.
 
@@ -329,7 +329,6 @@ deployment, adding a safety check before pushing changes to production.
 
 ### Tag Stable Builds
 
-
 Next, you're going to tag the **stable builds in Jenkins**. To tag these builds, you can use a consistent naming 
 convention such as `stable-v1.0`,`stable-v1.1`, and so on. These tags should only be created for builds that 
 **successfully pass all pipeline stages**.
@@ -436,6 +435,9 @@ to follow a structure similar to Part 1 of CA5, where both the application and t
 within the same container.
 
 ### Automate Infrastructure Setup
+To ensure consistent and repeatable environment creation, this setup uses `Vagrant` with an `Ansible` provisioner. By 
+automating the entire process, it is possible to guarantee that the development environment can be recreated reliably on 
+any machine with minimal manual intervention.
 
 ```bash
 Vagrant.configure("2") do |config|
@@ -456,6 +458,24 @@ Vagrant.configure("2") do |config|
   end
 end
 ```
+
+### ca6-p2 VM
+The `Vagrantfile` begins by defining the base image used to build the virtual environment: `bento/ubuntu-20.04`. The VM 
+**ca6-p2** is then configured using the VirtualBox provider. Its name is set to `ca6-p2`, and it is assigned `1 GB` of 
+RAM and `2 CPU cores`, providing sufficient resources to run the Spring Boot Rest Application within a Docker container.
+
+Networking is configured in two ways:
+- A private network assigns the VM a static IP address: `192.168.56.12`.
+- A port forwarding rule exposes the VM’s internal port `8080` on the host machine via port `8085`, allowing local 
+access to the application running inside the VM.
+
+Finally, the VM is provisioned using `Ansible`, with Vagrant automatically executing the `playbook.yml` file.
+
+### Ansible Provisioning
+This machine must be provisioned automatically using **Ansible**. Your first version of the Ansible `playbook.yaml` 
+should deploy the current version of the Spring Boot Rest Application, targeting the **blue** VM for deployment.
+
+The result can be achieved by following the steps outlined in the `playbook.yaml` below.
 
 ```yaml
 ---
@@ -505,26 +525,140 @@ end
           - "8082:8086"
 ```
 
-## Define the Pipeline Logic
-Configure a GitHub webhook to trigger the execution of your Jenkins pipeline
-whenever a new commit is pushed to the main or development branches
-of your repository
-▪ Define the pipeline logic in a Jenkinsfile stored in your repository
+### Define the Pipeline Logic
+Below is the CI/CD workflow that must be implemented in the `Jenkinsfile`. A **GitHub webhook** must be configured so 
+that any push to either the **main** or **development** branches automatically triggers the pipeline. The pipeline must 
+include the following stages:
+1. **Checkout**: Retrieve the latest version of the source code from your remote repository.
+2. **Assemble**: Compile the application and generate all necessary artifacts.
+3. **Test**: Execute **unit** and **integration** tests. Test results **must be published in Jenkins**, and failed tests 
+should mark the build as **unstable** or **failed** depending on severity.
+4. **Tag Docker Image**: Build the Docker image for the application and apply an appropriate tag.
+5. **Archive**: Archive the `Dockerfile` and any relevant build metadata in Jenkins.
+6. **Push Docker Image**: Authenticate to Docker Hub and push the tagged Docker image to the registry.
+7. **Deploy**: Execute an Ansible playbook to deploy the newly built Docker image.
 
-Define the following stages in your Jenkins pipeline:
-▪ Checkout – Pull the latest source code from your repository
-▪ Assemble – Compile the code and produce the artifact files
-▪ Test – Run unit and integration tests to verify the application’s correctness.
-Publish the test results in Jenkins
-▪ Tag Docker image – Build a Docker image for the application and tag it
-appropriately (e.g., with the build number or branch name)
-▪ Archive – Archive the Dockerfile and related metadata in Jenkins for
-traceability and future reference
-▪ Push Docker Image – Push the tagged Docker image to Docker Hub to
-make it available for deployment across environments. Use appropriate
-authentication credentials to securely push the image
-▪ Deploy – Use an Ansible playbook for the deployment of the latest Docker
-image for the application
+```bash
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        EMAIL_RECIPIENTS = "1250503@isep.ipp.pt, 1250506@isep.ipp.pt, 1250545@isep.ipp.pt"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Pulling source code..."
+
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']],
+                    gitTool: isUnix() ? 'DefaultLinuxGit' : 'DefaultWindowsGit'
+                ])
+            }
+        }
+
+        stage('Assemble') {
+            steps {
+                echo "Building project..."
+
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    script {
+                        if (isUnix()) {
+                            sh './gradlew clean build'
+                        }
+                        else {
+                            bat 'gradlew.bat clean build'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running test..."
+
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    script {
+                        if (isUnix()) {
+                            sh './gradlew test integrationTest'
+                        } else {
+                            bat 'gradlew.bat test integrationTest'
+                        }
+                    }
+                    junit 'build/test-results/test/*.xml'
+                }
+            }
+        }
+
+         stage('Archiving') {
+            steps {
+                echo 'Archiving artifacts...'
+
+                archiveArtifacts artifacts: 'Dockerfile'
+                archiveArtifacts artifacts: 'CA2/PART-II/gradle-tut-rest/build/libs/*.jar'
+            }
+         }
+
+        stage('Build and Tag Docker Image') {
+            steps {
+                echo "Building Docker image..."
+
+                script {
+                    if (isUnix()){
+                        sh """
+                            docker build -t gradle-tut-rest:4.0 -f Dockerfile .
+                            docker tag gradle-tut-rest:4.0 gradle-tut-rest:latest
+                        """
+                    } else {
+                        bat """
+                            docker build -t gradle-tut-rest:4.0 -f Dockerfile .
+                            docker tag gradle-tut-rest:4.0 gradle-tut-rest:latest
+                        """
+                    }
+
+                }
+            }
+        }
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                echo "Pushing Image to Docker Hub..."
+
+                script {
+                    if (isUnix()) {
+                        sh """
+                            docker push gradle-tut-rest:4.0
+                            docker push gradle-tut-rest:latest
+                        """
+                    } else {
+                        bat """
+                            docker push gradle-tut-rest:4.0
+                            docker push gradle-tut-rest:latest
+                        """
+                    }
+                }
+            }
+        }
+
+         stage('Deploy to Production') {
+            steps {
+                echo "Deploying to production..."
+
+                script {
+                    timeout(time: 60, unit: 'SECONDS') {
+                        input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')
+                    }
+                }
+            }
+         }
+    }
+}
+```
 
 Execute parallel tests (both unit and integration) as part of the
 pipeline, reducing the overall runtime
@@ -541,12 +675,76 @@ triggering deployment actions
 ▪ Stop and remove the old container if it exists
 ▪ Run the new Docker container
 
+### Include `post-actions` Messages in the Pipeline:
 Include the following post-actions in your pipeline:
-▪ Notification – Instead of just printing a message, consider integrating with
-tools like Slack, Microsoft Teams, or email to send success, failure, or
-unstable build notifications
-▪ Deployment Verification – Add automated health checks after deployment
-to verify that the application is functioning correctly in production
+1. **Notification**: Instead of just printing a message, consider integrating with tools like `email` to send 
+**success**, **failure**, or **unstable** build notifications.
+2. **Deployment Verification**: Add automated health-checks after deployment to verify that the application is 
+functioning correctly in production
+
+Below you will find the utilized `post-actions` on the `Jenkinsfile`. You can use these `post-action` as an example to 
+achieve the pretended result.
+
+```bash
+    post {
+        success {
+            echo "Build succeeded!"
+            echo "Sending email notification!"
+
+            script {
+                emailext (
+                    to: "${EMAIL_RECIPIENTS}",
+                    subject: "Jenkins Pipeline SUCCESS",
+                    body: "Pipeline completed successfully."
+                )
+            }
+
+            echo "Running health-check..."
+
+            def response = ''
+
+            if (isUnix()) {
+                response = sh(
+                    script: "curl -s -o /dev/null -w \"%{http_code}\" http://192.168.56.10:8082/employees",
+                    returnStdout: true
+                ).trim()
+            } else {
+                response = bat
+                }(
+                    script: """
+                        powershell -Command "(Invoke-WebRequest -Uri 'http://192.168.56.10:8082/employees' -UseBasicParsing).StatusCode"
+                    """,
+                    returnStdout: true
+                ).trim()
+            }
+
+            if (response == '200') {
+                echo "Application is healthy!"
+            } else {
+                echo "Application may be be unstable or unreachable!"
+            }
+        }
+
+        unstable {
+            echo "The pipeline completed with unstable results due to test failures."
+        }
+
+        failure {
+            echo "Build failed!"
+            script {
+                emailext (
+                    to: "${EMAIL_RECIPIENTS}",
+                    subject: "Jenkins Pipeline FAILED",
+                    body: "The pipeline failed"
+                )
+            }
+        }
+
+        always {
+            echo "Pipeline execution completed."
+        }
+    }
+```
 
 ## Alternative Technologies
 In this section you'll be introduced to some alternative technologies to Jenkins and how one could implement
@@ -653,7 +851,7 @@ Advantages
     </tr>
     <tr>
       <td>Strong VCS support, particularly for Git operations</td>
-      <td>Kubernetes integration via specialized plugins</td>
+      <td>Kubernetes' integration via specialized plugins</td>
     </tr>
     <tr>
       <td>Built-in Docker support and container-based build agents</td>

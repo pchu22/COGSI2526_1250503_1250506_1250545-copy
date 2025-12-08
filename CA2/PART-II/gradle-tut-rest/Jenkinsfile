@@ -1,5 +1,11 @@
 pipeline {
     agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        EMAIL_RECIPIENTS = "1250503@isep.ipp.pt, 1250506@isep.ipp.pt, 1250545@isep.ipp.pt"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -38,9 +44,9 @@ pipeline {
                 dir('CA2/PART-II/gradle-tut-rest') {
                     script {
                         if (isUnix()) {
-                            sh './gradlew test'
+                            sh './gradlew test integrationTest'
                         } else {
-                            bat 'gradlew.bat test'
+                            bat 'gradlew.bat test integrationTest'
                         }
                     }
                     junit 'build/test-results/test/*.xml'
@@ -52,10 +58,51 @@ pipeline {
             steps {
                 echo 'Archiving artifacts...'
 
-                archiveArtifacts 'CA2/PART-II/gradle-tut-rest/build/libs/*.jar'
+                archiveArtifacts artifacts: 'Dockerfile'
+                archiveArtifacts artifacts: 'CA2/PART-II/gradle-tut-rest/build/libs/*.jar'
             }
          }
 
+        stage('Build and Tag Docker Image') {
+            steps {
+                echo "Building Docker image..."
+
+                script {
+                    if (isUnix()){
+                        sh """
+                            docker build -t gradle-tut-rest:4.0 -f Dockerfile .
+                            docker tag gradle-tut-rest:4.0 gradle-tut-rest:latest
+                        """
+                    } else {
+                        bat """
+                            docker build -t gradle-tut-rest:4.0 -f Dockerfile .
+                            docker tag gradle-tut-rest:4.0 gradle-tut-rest:latest
+                        """
+                    }
+
+                }
+            }
+        }
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                echo "Pushing Image to Docker Hub..."
+
+                script {
+                    if (isUnix()) {
+                        sh """
+                            docker push gradle-tut-rest:4.0
+                            docker push gradle-tut-rest:latest
+                        """
+                    } else {
+                        bat """
+                            docker push gradle-tut-rest:4.0
+                            docker push gradle-tut-rest:latest
+                        """
+                    }
+                }
+            }
+        }
 
          stage('Deploy to Production') {
             steps {
@@ -73,27 +120,16 @@ pipeline {
     post {
         success {
             echo "Build succeeded!"
-            echo "Tagging this stable build..."
+            echo "Sending email notification!"
 
-            def tag = "stable-v${env.BUILD_NUMBER}"
-
-            if (isUnix()) {
-                sh """
-                    git config user.name "jenkins"
-                    git config user.email "jenkins@cogsi"
-                    git tag ${tag}
-                    git push origin ${tag}
-                """
-            } else {
-                bat """
-                    git config user.name "jenkins"
-                    git config user.email "jenkins@cogsi"
-                    git tag ${tag}
-                    git push origin ${tag}
-                """
+            script {
+                emailext (
+                    to: "${EMAIL_RECIPIENTS}",
+                    subject: "Jenkins Pipeline SUCCESS",
+                    body: "Pipeline completed successfully."
+                )
             }
 
-            echo "Tag ${tag} successfully created and pushed."
             echo "Running health-check..."
 
             def response = ''
@@ -120,8 +156,19 @@ pipeline {
             }
         }
 
+        unstable {
+            echo "The pipeline completed with unstable results due to test failures."
+        }
+
         failure {
             echo "Build failed!"
+            script {
+                emailext (
+                    to: "${EMAIL_RECIPIENTS}",
+                    subject: "Jenkins Pipeline FAILED",
+                    body: "The pipeline failed"
+                )
+            }
         }
 
         always {

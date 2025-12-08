@@ -1,86 +1,45 @@
 ---
-- name: Provision the blue VM
-  hosts: blue
+- name: Provision the ca6-p2 VM
+  hosts: ca6-p2
   become: true
   become_method: sudo
+  vars_files:
+    - secrets/dockerhub.yml
+
   tasks:
-    - name: Update apt cache
-      become: true
+    - name: Install Docker
       apt:
+        name: docker.io
+        state: present
         update_cache: yes
-        cache_valid_time: 3600
 
-    - name: Install Git
-      package:
-        name: git
-        state: present
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-    - name: Install Java
-      apt:
-        name: default-jre
-        state: present
+    - name: Login to Docker Hub
+      docker_login:
+        username: "{{ dockerhub_user }}"
+        password: "{{ dockerhub_pass }}"
 
-    - name: Install JDK
-      apt:
-        name: openjdk-17-jdk
-        state: present
+    - name: Pull latest Docker image
+      docker_image:
+        name: "devpchu01/gradle-tut-rest:4.0"
+        source: pull
 
-    - name: Ensure if the repository exists
-      stat:
-        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/.git
-      register: repo_status
+    - name: Stop any container that's running (if exists)
+      docker_container:
+        name: "spring-boot-rest-application"
+        state: absent
+        force_kill: yes
 
-    - name: Clone the Git repository
-      git:
-        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
-        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
-        version: main
-        update: no
-      register: git_clone
-      when: not repo_status.stat.exists
-
-    - name: Pull from the Git repository
-      git:
-        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
-        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
-        version: main
-        update: yes
-        force: yes
-      register: git_pull
-      when: git_clone is not changed or git_clone is skipped
-
-    - name: Repository clone debug message
-      debug:
-        msg: "Repository successfully cloned!"
-      when: git_clone.changed
-
-    - name: Repository existence debug message
-      debug:
-        msg: "Repository already exists. Skipping clone.."
-      when: git_clone is skipped
-
-    - name: Up-to-dated project debug message
-      debug:
-        msg: "Repository successfully updated!"
-      when: not git_pull.changed
-
-    - name: Ensure project directory has the right ownership
-      file:
-        path: /home/vagrant/COGSI2526_1250503_1250506_1250545
-        state: directory
-        owner: vagrant
-        group: vagrant
-
-    - name: Ensure gradlew has correct permissions
-      file:
-        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/gradlew
-        state: file
-        owner: vagrant
-        group: vagrant
-        mode: '0744'
-
-    - name: Run Spring Boot Rest Application
-      shell: |
-        ./gradlew bootRun
-      args:
-        chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
+    - name: Run the container
+      docker_container:
+        name: "spring-boot-rest-application"
+        image: "devpchu01/gradle-tut-rest:4.0"
+        state: started
+        restart_policy: always
+        ports:
+          - "8082:8086"
