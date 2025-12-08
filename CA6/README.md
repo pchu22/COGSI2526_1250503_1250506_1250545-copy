@@ -1,29 +1,192 @@
 # CA 6 - CI/CD Pipelines
-This class assignment (CA) will focus on designing and implementing CI/CD pipelines utilizing **Jenkins**, combined with 
+This class assignment (CA) focuses on designing and implementing **CI/CD pipelines** using **Jenkins**, along with 
 automated infrastructure provisioning using **Vagrant** and **Ansible**. 
 
-You'll build the CI/CD Pipelines using concepts learned in previous CAs (specifically CA3 and CA5).
+You'll build the CI/CD Pipelines using concepts learned in previous assignments, specifically CA3 and CA5.
 
-## Jenkins
-Jenkins is a self-contained, open source automation server which can be used to automate all sorts of tasks related to 
-building, testing, and delivering or deploying software.
+## Jenkins Overview
+**Jenkins** is a self-contained, open source automation server used to automate tasks related to building, testing, and 
+delivering or deploying software.
 
-Jenkins can be installed through native system packages, Docker, or even run standalone by any machine with a Java 
-Runtime Environment (JRE) installed.
+It can be installed through:
+- Native system packages.
+- Docker containers.
+- A standalone Java Runtime Environment (JRE).
 
 ### Installing Jenkins
 
 ## Part I
-The goal of the first part of CA6 is to create a pipeline that builds the Gradle version of the Building REST services 
-with Spring application and deploys it to a local virtual machine (VM). This task is designed to follow a structure 
-similar to Part 1 of CA3, where both the application and the H2 database are hosted and executed within the same VM.
+The first part of CA6 requires creating a pipeline that:
+1. Builds the Gradle version of the Spring Boot Rest Application
+2. Deploys the built application to a local virtual machine (VM). 
+This task mirrors the structure of Part 1 of CA3, where both the application and the H2 database run inside the same VM.
 
 ## Automate Infrastructure Setup
-You're going to create two VMs using Vagrant - one named **blue**, and another named **green** - and provision the using 
-Ansible. 
+You'll use **Vagrant** to create and manage two VMs:
+- **blue**
+- **green**
 
-The "first version" of your `playbook.yaml` should deploy the current version of the Spring Boot Rest Application on the 
-**blue** machine.
+The result can be achieved by following the steps outlined in the `Vagrantfile` below.
+
+```bash
+Vagrant.configure("2") do |config|
+    config.vm.box = "bento/ubuntu-20.04"
+
+    config.ssh.forward_agent = true
+    config.ssh.insert_key = false
+
+    config.vm.define "blue" do |blue|
+
+        blue.vm.provider "virtualbox" do |vb|
+            vb.name = "blue"
+            vb.memory = 1024
+            vb.cpus = 2
+        end
+
+        blue.vm.network "private_network", ip: "192.168.56.10"
+        blue.vm.network "forwarded_port", guest: 8080, host: 8081
+
+        blue.vm.provision "ansible" do |ansible|
+            ansible.playbook = "./playbook.yaml"
+            ansible.compatibility_mode = "2.0"
+        end
+    end
+
+    config.vm.define "green" do |green|
+
+        green.vm.provider "virtualbox" do |vb|
+            vb.name = "green"
+            vb.memory = 1024
+            vb.cpus = 2
+        end
+
+        green.vm.network "private_network", ip: "192.168.56.11"
+        green.vm.network "forwarded_port", guest: 8080, host: 8083
+
+        green.vm.provision "ansible" do |ansible|
+            ansible.playbook = "./playbook-green.yaml"
+            ansible.compatibility_mode = "2.0"
+        end
+    end
+end
+```
+
+The Vagrantfile begins by specifying the base box used to create all virtual machines: `bento/ubuntu-20.04`, an Ubuntu
+20.04 image maintained for development environments.
+
+### Blue VM
+Firstly, it's defined the first VM, named **blue**. This machine uses the VirtualBox provider, where its VM name is set 
+to `blue`, and it is allocated `1 GB of RAM` and `2 CPU cores`, giving it enough resources to run the Spring Boot Rest 
+Application. Networking is configured in two ways: first, a private network assigns the machine the static IP 
+`192.168.56.10`, second, a port forwarding rule exposes the application running inside the VM on port `8080`, mapping it 
+to port `8081` on the host.
+
+After networking, an Ansible provisioner is defined, instructing Vagrant to run the playbook `playbook.yaml` to 
+automatically provision the machine.
+
+### Green VM
+The configuration defines the second machine, named **green**, which mirrors the structure of the blue VM but serves 
+as a parallel deployment environment. Using the VirtualBox provider, the green VM is assigned the same hardware 
+resources, and is named `green`. It also receives its own private IP address, `192.168.56.11`, and a different port 
+forwarding rule, mapping its internal port `8080` to port `8083` on the host system. 
+
+The green VM is provisioned with a separate Ansible playbook, `playbook-green.yaml`, allowing a different version or 
+configuration of the application to be deployed.
+
+### Ansible Provisioning
+These machines must be provisioned automatically using **Ansible**. Your first version of the Ansible `playbook.yaml` 
+should deploy the current version of the Spring Boot Rest Application, targeting the **blue** VM for deployment.
+
+The result can be achieved by following the steps outlined in the `playbook.yaml` below.
+
+```yaml
+---
+- name: Provision the blue VM
+  hosts: blue
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      apt:
+        name: default-jre
+        state: present
+
+    - name: Install JDK
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Ensure if the repository exists
+      stat:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/.git
+      register: repo_status
+
+    - name: Clone the Git repository
+      git:
+        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        version: main
+        update: no
+      register: git_clone
+      when: not repo_status.stat.exists
+
+    - name: Pull from the Git repository
+      git:
+        repo: https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy
+        dest: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        version: main
+        update: yes
+        force: yes
+      register: git_pull
+      when: git_clone is not changed or git_clone is skipped
+
+    - name: Repository clone debug message
+      debug:
+        msg: "Repository successfully cloned!"
+      when: git_clone.changed
+
+    - name: Repository existence debug message
+      debug:
+        msg: "Repository already exists. Skipping clone.."
+      when: git_clone is skipped
+
+    - name: Up-to-dated project debug message
+      debug:
+        msg: "Repository successfully updated!"
+      when: not git_pull.changed
+
+    - name: Ensure project directory has the right ownership
+      file:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545
+        state: directory
+        owner: vagrant
+        group: vagrant
+
+    - name: Ensure gradlew has correct permissions
+      file:
+        path: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/gradlew
+        state: file
+        owner: vagrant
+        group: vagrant
+        mode: '0744'
+
+    - name: Run Spring Boot Rest Application
+      shell: |
+        ./gradlew bootRun
+      args:
+        chdir: /home/vagrant/COGSI2526_1250503_1250506_1250545/CA2/PART-II/gradle-tut-rest/
+```
 
 ## Define the Pipeline Logic
 You will implement all the CI/CD automation for this CA using a `Jenkinsfile`, stored at the **root** of your 
@@ -165,11 +328,47 @@ nobody approves.
 deployment, adding a safety check before pushing changes to production.
 
 ### Tag Stable Builds
-Tag stable builds in Jenkins using a consistent naming convention - e.g., `stable-v1.0`, `stable-v1.1`.
 
-Ensure these tags are applied only to the artifacts that pass all tests.
 
-### Include `post-actions` in the Pipeline:
+Next, you're going to tag the **stable builds in Jenkins**. To tag these builds, you can use a consistent naming 
+convention such as `stable-v1.0`,`stable-v1.1`, and so on. These tags should only be created for builds that 
+**successfully pass all pipeline stages**.
+
+```bash
+    post {
+        success {
+            echo "Tagging this stable build..."
+            
+            def tag = "stable-v${env.BUILD_NUMBER}"
+            
+            if (isUnix()) {
+                sh """
+                    git config user.name "jenkins"
+                    git config user.email "jenkins@cogsi"
+                    git tag ${tag}
+                    git push origin ${tag}
+                """
+            } else {
+                bat """
+                    git config user.name "jenkins"
+                    git config user.email "jenkins@cogsi"
+                    git tag ${tag}
+                    git push origin ${tag}
+                """
+            }
+            
+            echo "Tag ${tag} successfully created and pushed."
+        }
+    }
+```
+
+In the example you provided above, a tag is created during the `post { success { ... } }` block. Using 
+`${env.BUILD_NUMBER}`, you automatically generate a unique tag for each successful build. Inside the block, Jenkins sets 
+a Git **username** and **email**, creates the tag locally using the command `git tag`, and then pushes it to the remote 
+repository using `git push`. The logic handles both Unix and Windows agents by switching between sh and bat steps, 
+ensuring compatibility across environments.
+
+### Include `post-actions` Messages in the Pipeline:
 Include the following post-actions in your pipeline:
 1. **Notification** – Print a message with the result of the pipeline’s execution
 2. **Deployment Verification** – Add automated health-checks after deployment to verify that the application is 
@@ -179,43 +378,359 @@ Below you will find the utilized `post-actions` on the `Jenkinsfile`. You can us
 achieve the pretended result.
 
 ```bash
-    post {
-        success {
-            echo "Running deployment verification..."
+post {
+    success {
+        echo "Build succeeded!"
+        echo "Running health-check..."
 
-            script {
-                def response = sh(
-                    script: "curl -s -o /dev/null -w '%{http_code}' https://localhost:8082/employees",
-                    returnStdout: true
-                ).trim()
+        def response = ''
 
-                if (response != '200') {
-                    error("Deployment verification failed! Status code: ${response}")
-                } else {
-                    echo "Deployment verified successfully!"
-                }
-            }
-            
-            echo "Build succeeded!"
+        if (isUnix()) {
+            response = sh(
+                script: "curl -s -o /dev/null -w \"%{http_code}\" http://192.168.56.10:8082/employees",
+                returnStdout: true
+            ).trim()
+        } else {
+            response = bat
+            }(
+                script: """
+                    powershell -Command "(Invoke-WebRequest -Uri 'http://192.168.56.10:8082/employees' -UseBasicParsing).StatusCode"
+                """,
+                returnStdout: true
+            ).trim()
         }
 
-        failure {
-            echo "Build failed!"
+        if (response == '200') {
+            echo "Application is healthy!"
+        } else {
+            echo "Application may be unstable or unreachable!"
         }
     }
+
+    failure {
+        echo "Build failed!"
+    }
+
+    always {
+        echo "Pipeline execution completed."
+    }
+}
 ```
 
-## Rollback to Previous Versions
-Create an Ansible `playbook` to roll back to a previous stable version of the Spring Boot Rest Application stored as an 
-artifact in Jenkins. The `playbook.yaml` should automate the rollback process by retrieving the artifact from Jenkins 
-and deploying it to the **green** VM.
-- Connect to Jenkins using the `Jenkins API` or `CLI` to **download the tagged artifact**.
-- Stop the application currently running on the **green** VM, ensuring the resources in use are properly released.
-- Replace the current application with the retrieved stable artifact and restart the service.
-- Run **automated health checks** to confirm that the stable version is running as expected.
+The above snippets of code define the following post-actions:
+
+1.  `success`: This block is only executed if **every stage completes without errors**. It performs two tasks, being the 
+first one a `Build Success` notification, and the second one a deployment health-check - After deployment, the pipeline 
+verifies if the application is healthy and reachable by sending an HTTP request and evaluating the **status code**. If 
+the server responds with `200`, Jenkins reports that the application is healthy, otherwise, it warns that the service 
+may be unstable or unreachable.
+2. `failure`: This section only runs when one or more stages fail. A "Build failed!" message is printed to the console 
+to indicate that the pipeline didn't complete.
+3. `always`: This block runs at the end of the pipeline whether the result is success, failure, or abort. It prints a 
+final message to indicate that the entire pipeline execution has concluded.
 
 ## Part II
 The goal of Part 2 is to create a pipeline that builds a Docker image of the Gradle version of the Building REST 
 services with Spring application, publishes it in Docker Hub, and deploys it on a production VM. This task is designed 
 to follow a structure similar to Part 1 of CA5, where both the application and the H2 database are hosted and executed 
 within the same container.
+
+### Automate Infrastructure Setup
+
+```bash
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-20.04"
+  config.vm.hostname = "ca6-p2"
+  
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "ca6-p2"
+    vb.memory = 1024
+    vb.cpus = 2
+  end
+
+  config.vm.network "private_network", ip: "192.168.56.12"
+  config.vm.network "forwarded_port", guest: 8080, host: 8085
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "playbook.yml"
+  end
+end
+```
+
+```yaml
+---
+- name: Provision the ca6-p2 VM
+  hosts: ca6-p2
+  become: true
+  become_method: sudo
+  vars_files:
+    - secrets/dockerhub.yml
+
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Login to Docker Hub
+      docker_login:
+        username: "{{ dockerhub_user }}"
+        password: "{{ dockerhub_pass }}"
+
+    - name: Pull latest Docker image
+      docker_image:
+        name: "devpchu01/gradle-tut-rest:4.0"
+        source: pull
+
+    - name: Stop any container that's running (if exists)
+      docker_container:
+        name: "spring-boot-rest-application"
+        state: absent
+        force_kill: yes
+
+    - name: Run the container
+      docker_container:
+        name: "spring-boot-rest-application"
+        image: "devpchu01/gradle-tut-rest:4.0"
+        state: started
+        restart_policy: always
+        ports:
+          - "8082:8086"
+```
+
+## Define the Pipeline Logic
+Configure a GitHub webhook to trigger the execution of your Jenkins pipeline
+whenever a new commit is pushed to the main or development branches
+of your repository
+▪ Define the pipeline logic in a Jenkinsfile stored in your repository
+
+Define the following stages in your Jenkins pipeline:
+▪ Checkout – Pull the latest source code from your repository
+▪ Assemble – Compile the code and produce the artifact files
+▪ Test – Run unit and integration tests to verify the application’s correctness.
+Publish the test results in Jenkins
+▪ Tag Docker image – Build a Docker image for the application and tag it
+appropriately (e.g., with the build number or branch name)
+▪ Archive – Archive the Dockerfile and related metadata in Jenkins for
+traceability and future reference
+▪ Push Docker Image – Push the tagged Docker image to Docker Hub to
+make it available for deployment across environments. Use appropriate
+authentication credentials to securely push the image
+▪ Deploy – Use an Ansible playbook for the deployment of the latest Docker
+image for the application
+
+Execute parallel tests (both unit and integration) as part of the
+pipeline, reducing the overall runtime
+▪ Consider using different Jenkins nodes for running these parallel tests to
+demonstrate efficient resource utilization and scalability
+
+Ensure the application is only deployed to production when a
+commit is pushed to the main branch
+▪ Use logic in your Jenkinsfile to verify the branch name before
+triggering deployment actions
+ The deployment playbook must:
+▪ Ensure Docker is installed
+▪ Login to Docker Hub and pull the latest Docker image
+▪ Stop and remove the old container if it exists
+▪ Run the new Docker container
+
+Include the following post-actions in your pipeline:
+▪ Notification – Instead of just printing a message, consider integrating with
+tools like Slack, Microsoft Teams, or email to send success, failure, or
+unstable build notifications
+▪ Deployment Verification – Add automated health checks after deployment
+to verify that the application is functioning correctly in production
+
+## Alternative Technologies
+In this section you'll be introduced to some alternative technologies to Jenkins and how one could implement
+**CA6-Part2** - In our case it was `TeamCity`.
+
+### Hudson
+
+### TeamCity
+`TeamCity` is a build management and CI server **developed by JetBrains**, and was released on 2/10/2006. Open-source 
+projects can apply for a free license, giving them access to professional-grade CI/CD capabilities. TeamCity offers a 
+web-based interface that simplifies navigation and makes setup and configuration straightforward. It works with many 
+build and test tools, creating a cohesive development ecosystem. The **system tracks and analyses the build history**, 
+which can help improve software quality and predictability.
+
+Advantages
+- TeamCity is relatively simple to set up and guides through the project.
+- TeamCity connects with existing development tools and platforms.
+- TeamCity's platform provides clear insights into your DevOps pipeline.
+- Developers can work with builds without leaving their IDE.
+- TeamCity manage CI/CD configurations using Kotlin.
+
+**Disadvantages**
+- Scaling may require additional license as your workloads grow and more people join the team.
+- Compared to Jenkins, TeamCity has a fewer plugin.
+- The smaller community means fewer community-created resources.
+- While basic setup is simple, advanced features can take time to master.
+
+#### Licensing and Costs
+<table>
+  <thead>
+    <tr>
+      <th>TeamCity</th>
+      <th>Jenkins</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Commercial product with a free tier supporting 100 build configurations and 3 build agents</td>
+      <td>Open-source with license fees</td>
+    </tr>
+    <tr>
+      <td>Tiered enterprise pricing model based on build configurations and agents</td>
+      <td>Infrastructure costs are the primary expense</td>
+    </tr>
+    <tr>
+      <td>Additional build agents require separate licensing</td>
+      <td>Hidden costs include maintenance engineering time and potential downtime</td>
+    </tr>
+    <tr>
+      <td>Annual subscription covers version upgrades and basic support</td>
+      <td>Total investment primarily in engineering resources rather than licenses</td>
+    </tr>
+  </tbody>
+</table>
+
+#### User Interface and Configuration
+<table>
+  <thead>
+    <tr>
+      <th>TeamCity</th>
+      <th>Jenkins</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Modern web interface with consistent navigation patterns</td>
+      <td>Function-first interface design with extensive customization options</td>
+    </tr>
+    <tr>
+      <td>Visual build chain visualization for dependency tracking</td>
+      <td>Plugin-based dashboard customization</td>
+    </tr>
+    <tr>
+      <td>Project-based organization with inheritance of build parameters</td>
+      <td>View configuration through XML or web interface</td>
+    </tr>
+    <tr>
+      <td>Built-in test reporting with failure trend analysis</td>
+      <td>Job organization via folders and multibranch pipelines</td>
+    </tr>
+    <tr>
+      <td>Simpler initial setup but less customizable UI than Jenkins</td>
+      <td>Higher learning curve but more flexible for specific workflow needs</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Plugin Ecosystem and Integrations
+<table>
+  <thead>
+    <tr>
+      <th>TeamCity</th>
+      <th>Jenkins</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Around 300 plugins with consistent quality standards</td>
+      <td>More than 1800 community plugins covering virtually all tools and platforms</td>
+    </tr>
+    <tr>
+      <td>First-party JetBrains tool integration (IntelliJ)</td>
+      <td>Extensive SCM support through dedicated plugins</td>
+    </tr>
+    <tr>
+      <td>Strong VCS support, particularly for Git operations</td>
+      <td>Kubernetes integration via specialized plugins</td>
+    </tr>
+    <tr>
+      <td>Built-in Docker support and container-based build agents</td>
+      <td>Variable plugin quality and maintenance levels</td>
+    </tr>
+    <tr>
+      <td>Plugin compatibility more predictable between versions</td>
+      <td>Requires careful evaluation of plugin security and update frequency</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Scalability and Performance
+<table>
+  <thead>
+    <tr>
+      <th>TeamCity</th>
+      <th>Jenkins</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Efficient server-side optimization for large project databases</td>
+      <td>Master-agent architecture for horizontal scaling</td>
+    </tr>
+    <tr>
+      <td>Cloud agent support for AWS, GCP and Azure</td>
+      <td>Can run thousands of concurrent jobs with proper infrastructure</td>
+    </tr>
+    <tr>
+      <td>Agent requirements and compatibility functionality for build routing</td>
+      <td>Potential performance bottlenecks at the controller level with high concurrency</td>
+    </tr>
+    <tr>
+      <td>Build grid for distributed test execution</td>
+      <td>Stateless agent design allows for container-based scaling</td>
+    </tr>
+    <tr>
+      <td>License costs increase linearly with scale</td>
+      <td>Memory/CPU requirements increase with plugin count and build complexity</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Maintenance and Support
+<table>
+  <thead>
+    <tr>
+      <th>TeamCity</th>
+      <th>Jenkins</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>JetBrains commercial support with SLAs for critical issues</td>
+      <td>Community support through forums, IRC and mailing lists</td>
+    </tr>
+    <tr>
+      <td>Incremental upgrade path with backward compatibility</td>
+      <td>Requires dedicated expertise for upgrades and maintenance</td>
+    </tr>
+    <tr>
+      <td>Built-in backup functionality for configuration and history</td>
+      <td>Configuration-as-code plugin helps with version control of settings</td>
+    </tr>
+    <tr>
+      <td>Clear documentation and knowledge base</td>
+      <td>Extensive but sometimes fragmented documentation</td>
+    </tr>
+  </tbody>
+</table>
+
+### Implementation
+
+## Self-Evaluation
+```bash
+Daniel (1250503) - 80%
+Diogo (1250506) - 80%
+Pedro (1250545) - 100%
+```

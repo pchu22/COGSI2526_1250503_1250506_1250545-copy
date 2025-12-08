@@ -1,0 +1,81 @@
+---
+- name: Provision the green VM
+  hosts: green
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Update apt cache
+      become: true
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        force_apt_get: yes
+        
+    - name: Install Git
+      package:
+        name: git
+        state: present
+
+    - name: Install Java
+      apt:
+        name: default-jre
+        state: present
+
+    - name: Install JDK
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Ensure project directory exists
+      file:
+        path: "gradle-tut-rest"
+        state: directory
+        mode: "0755"
+
+    - name: Copy project JAR from Jenkins host to VM
+      copy:
+        src: "CA2/PART-II/gradle-tut-rest/build/libs/*.jar"
+        dest: "gradle-tut-rest/app.jar"
+        mode: "0755"
+
+    - name: Copy gradle directory
+      copy:
+        src: "CA2/PART-II/gradle-tut-rest/gradle"
+        dest: "gradle-tut-rest/gradle"
+        mode: "0755"
+
+    - name: Copy gradlew script
+      copy:
+        src: "CA2/PART-II/gradle-tut-rest/gradlew"
+        dest: "gradle-tut-rest/gradlew"
+        mode: "0755"
+
+    - name: Copy gradlew (.bat) script
+      copy:
+        src: "CA2/PART-II/gradle-tut-rest/gradlew.bat"
+        dest: "gradle-tut-rest/gradlew.bat"
+        mode: "0755"
+
+    - name: Kill any previous bootRun instance
+      shell: |
+        pkill -f "gradlew bootRun" || true
+        pkill -f "gradlew.bat bootRun" || true
+      ignore_errors: yes
+
+#    - name: Start application with bootRun in background
+#      shell: |
+#        cd gradle-tut-rest
+#          ./gradlew bootRun
+#      async: 5
+#      poll: 0
+#
+#    - name: Wait for app to start
+#      uri:
+#        url: http://localhost:8080/actuator/health
+#        method: GET
+#        return_content: no
+#        status_code: 200
+#      register: health
+#      retries: 10
+#      delay: 3
+#      until: health.status == 200
