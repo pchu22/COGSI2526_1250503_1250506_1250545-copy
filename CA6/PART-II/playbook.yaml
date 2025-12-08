@@ -1,0 +1,45 @@
+---
+- name: Provision the ca6-p2 VM
+  hosts: ca6-p2
+  become: true
+  become_method: sudo
+  vars_files:
+    - secrets/dockerhub.yml
+
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Login to Docker Hub
+      docker_login:
+        username: "{{ dockerhub_user }}"
+        password: "{{ dockerhub_pass }}"
+
+    - name: Pull latest Docker image
+      docker_image:
+        name: "devpchu01/gradle-tut-rest:4.0"
+        source: pull
+
+    - name: Stop any container that's running (if exists)
+      docker_container:
+        name: "spring-boot-rest-application"
+        state: absent
+        force_kill: yes
+
+    - name: Run the container
+      docker_container:
+        name: "spring-boot-rest-application"
+        image: "devpchu01/gradle-tut-rest:4.0"
+        state: started
+        restart_policy: always
+        ports:
+          - "8082:8086"

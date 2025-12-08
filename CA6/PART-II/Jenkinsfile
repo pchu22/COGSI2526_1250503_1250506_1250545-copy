@@ -1,0 +1,200 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        EMAIL_RECIPIENTS = "1250503@isep.ipp.pt, 1250506@isep.ipp.pt, 1250545@isep.ipp.pt"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Pulling source code..."
+
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']],
+                    gitTool: isUnix() ? 'DefaultLinuxGit' : 'DefaultWindowsGit'
+                ])
+            }
+        }
+
+        stage('Assemble') {
+            steps {
+                echo "Building project..."
+
+                dir('CA2/PART-II/gradle-tut-rest') {
+                    script {
+                        if (isUnix()) {
+                            sh './gradlew clean build'
+                        }
+                        else {
+                            bat 'gradlew.bat clean build'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running test..."
+                stage ('Unit Test') {
+                    agent { label 'node-1' }
+
+                    echo "Running unit tests..."
+
+                    dir('CA2/PART-II/gradle-tut-rest') {
+                        script {
+                            if (isUnix()) {
+                                sh './gradlew test'
+                            } else {
+                                bat 'gradlew.bat test'
+                            }
+                        }
+                        junit 'build/test-results/test/*.xml'
+                    }
+                }
+                stage (Integration Test) {
+                    agent { label 'node-2' }
+
+                    echo "Running integration tests..."
+
+                    dir('CA2/PART-II/gradle-tut-rest') {
+                        script {
+                            if (isUnix()) {
+                                sh './gradlew integrationTest'
+                            } else {
+                                bat 'gradlew.bat integrationTest'
+                            }
+                        }
+                        junit 'build/test-results/integrationTest/*.xml'
+                    }
+                }
+
+            }
+        }
+
+         stage('Archiving') {
+            steps {
+                echo 'Archiving artifacts...'
+
+                archiveArtifacts artifacts: 'Dockerfile'
+                archiveArtifacts artifacts: 'CA2/PART-II/gradle-tut-rest/build/libs/*.jar'
+            }
+         }
+
+        stage('Build and Tag Docker Image') {
+            steps {
+                echo "Building Docker image..."
+
+                script {
+                    if (isUnix()){
+                        sh """
+                            docker build -t gradle-tut-rest:4.0 -f Dockerfile .
+                            docker tag gradle-tut-rest:4.0 gradle-tut-rest:latest
+                        """
+                    } else {
+                        bat """
+                            docker build -t gradle-tut-rest:4.0 -f Dockerfile .
+                            docker tag gradle-tut-rest:4.0 gradle-tut-rest:latest
+                        """
+                    }
+
+                }
+            }
+        }
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                echo "Pushing Image to Docker Hub..."
+
+                script {
+                    if (isUnix()) {
+                        sh """
+                            docker push gradle-tut-rest:4.0
+                            docker push gradle-tut-rest:latest
+                        """
+                    } else {
+                        bat """
+                            docker push gradle-tut-rest:4.0
+                            docker push gradle-tut-rest:latest
+                        """
+                    }
+                }
+            }
+        }
+
+         stage('Deploy to Production') {
+            steps {
+                echo "Deploying to production..."
+
+                script {
+                    timeout(time: 60, unit: 'SECONDS') {
+                        input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')
+                    }
+                }
+            }
+         }
+    }
+
+    post {
+        success {
+            echo "Build succeeded!"
+            echo "Sending email notification!"
+
+            script {
+                emailext (
+                    to: "${EMAIL_RECIPIENTS}",
+                    subject: "Jenkins Pipeline SUCCESS",
+                    body: "Pipeline completed successfully."
+                )
+            }
+
+            echo "Running health-check..."
+
+            def response = ''
+
+            if (isUnix()) {
+                response = sh(
+                    script: "curl -s -o /dev/null -w \"%{http_code}\" http://192.168.56.12:8082/employees",
+                    returnStdout: true
+                ).trim()
+            } else {
+                response = bat
+                }(
+                    script: """
+                        powershell -Command "(Invoke-WebRequest -Uri 'http://192.168.56.12:8082/employees' -UseBasicParsing).StatusCode"
+                    """,
+                    returnStdout: true
+                ).trim()
+            }
+
+            if (response == '200') {
+                echo "Application is healthy!"
+            } else {
+                echo "Application may be be unstable or unreachable!"
+            }
+        }
+
+        unstable {
+            echo "The pipeline completed with unstable results due to test failures."
+        }
+
+        failure {
+            echo "Build failed!"
+            script {
+                emailext (
+                    to: "${EMAIL_RECIPIENTS}",
+                    subject: "Jenkins Pipeline FAILED",
+                    body: "The pipeline failed"
+                )
+            }
+        }
+
+        always {
+            echo "Pipeline execution completed."
+        }
+    }
+}

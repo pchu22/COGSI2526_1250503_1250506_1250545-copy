@@ -662,18 +662,70 @@ pipeline {
 }
 ```
 
-Execute parallel tests as part of the pipeline, reducing the overall runtime
-▪ Consider using different Jenkins nodes for running these parallel tests to demonstrate efficient resource 
-utilization and scalability
+The `Checkout` stage is responsible for pulling the latest source code from the remote repository into the Jenkins
+workspace. It begins by printing a message to the console indicating that the checkout process is starting. The checkout
+step uses the **Git SCM plugin** to interact with the repository and is configured to ensure the correct branch and
+repository are used, while also handling differences between operating systems.
 
-Ensure the application is only deployed to production when a commit is pushed to the main branch
-▪ Use logic in your `Jenkinsfile` to verify the branch name before triggering deployment actions
+- `$class: 'GitSCM'`: Specifies that the **Git Source Control Management** plugin is being utilized.
+- `branches: [[name: '*/main']]`: Indicates the checkout branch.
+- `userRemoteConfigs: [[url: 'https://github.com/pchu22/COGSI2526_1250503_1250506_1250545-copy']]`: Defines the remote
+  repository URL to pull the code from.
+- `gitTool: isUnix() ? 'DefaultLinuxGit' : 'DefaultWindowsGit'`: Dynamically selects the Git executable based on the
+  agent's operating system.
 
-The deployment playbook must:
-- Ensure Docker is installed
-- Login to Docker Hub and pull the latest Docker image
-- Stop and remove the old container if it exists
-- Run the new Docker container
+The `Assemble` stage is responsible for building the project. It prints a message to indicate that the build is
+starting. The `dir` block navigates to the `CA2/PART-II/gradle-tut-rest` directory where the Gradle project is located.
+Inside a **script** block, the pipeline dynamically chooses the command depending on the agent’s operating system:
+- On **Unix/Linux/macOS nodes**, it runs `sh './gradlew clean build'` to clean any previous build and assemble a fresh
+  build.
+- On **Windows nodes**, it runs `bat 'gradlew.bat clean build'` to achieve the same effect.
+
+The `Test` stage is responsible for running automated tests. It navigates to the project directory and **executes the
+Gradle test task**:
+- On **Unix/Linux/macOS nodes**, it runs `sh './gradlew test'`.
+- On **Windows nodes**, it runs `bat 'gradlew.bat test'`.
+
+After running the tests, the junit step collects the test results from `build/test-results/test/*.xml` so that Jenkins
+can display them in the UI. This ensures that test failures are tracked and visible in the pipeline.
+
+The `Archiving` stage handles storing the build artifacts. It prints a message to indicate archiving and then uses 
+`archiveArtifacts artifacts: 'Dockerfile'` to save the Dockerfile, so it can be reused for building Docker images, and
+`archiveArtifacts 'CA2/PART-II/gradle-tut-rest/build/libs/*.jar'` to save the compiled JAR files. This makes them
+available for future stages, downloads, or deployments.
+
+The `Build and Tag Docker Image` stage builds the Docker image using the project’s Dockerfile and tags it. On Unix 
+systems, it runs:
+
+```bash
+docker build -t gradle-tut-rest:4.0 -f Dockerfile .
+docker tag gradle-tut-rest:4.0 gradle-tut-rest:latest
+
+```
+and on Windows systems, it uses the equivalent bat commands.
+
+
+The `Push Docker Image to Docker Hub` stage pushes the Docker image to Docker Hub. On Unix systems, it runs:
+
+```bash
+docker push gradle-tut-rest:4.0
+docker push gradle-tut-rest:latest
+```
+
+and on Windows systems, it uses the equivalent bat commands.
+
+Finally, the `Deploy to Production` stage is a manual approval step. It prints a message about deployment and uses a
+timeout combined with input to pause the pipeline and request user confirmation:
+- `timeout(time: 60, unit: 'SECONDS')` ensures the input prompt will only wait for 60 seconds before failing the step if
+  nobody approves.
+- `input(message: 'Deploy application to PRODUCTION?', ok: 'Approve Deployment')` prompts the user to approve the
+  deployment, adding a safety check before pushing changes to production.
+
+### Parallel Testing
+In order to reduce the overall runtime, execute **parallel tests**. In order to achieve that, you're going to use 
+different Jenkins nodes for running these tests to demonstrate efficient resource utilization and scalability.
+
+The application should only be deployed to production when a commit is pushed to the main branch
 
 Apply (in your `Jenkinsfile`) the changes presented below to achieve the desired result:
 
@@ -805,6 +857,13 @@ In this section you'll be introduced to some alternative technologies to Jenkins
 **CA6-Part2** - In our case it was `TeamCity`.
 
 ### Hudson
+Hudson was an open-source Java-based CI/CD server that automated building, testing, and deploying software, supporting 
+various version control systems and build tools. Developed by Kohsuke Kawaguchi at Sun Microsystems, it gained 
+popularity around 2008 and became widely used for continuous integration.
+
+After Oracle acquired Sun, disputes over project control led the community to fork Hudson and create Jenkins in 2011, 
+which became the dominant CI/CD tool. Hudson was officially declared obsolete in 2017, while Jenkins continues active 
+development and widespread adoption.
 
 ### TeamCity
 `TeamCity` is a build management and CI server **developed by JetBrains**, and was released on 2/10/2006. Open-source 
