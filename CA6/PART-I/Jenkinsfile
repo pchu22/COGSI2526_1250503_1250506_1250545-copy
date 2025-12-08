@@ -73,59 +73,10 @@ pipeline {
     post {
         success {
             echo "Build succeeded!"
-            echo "Tagging this stable build..."
-
-            def tag = "stable-v${env.BUILD_NUMBER}"
-
-            if (isUnix()) {
-                sh """
-                    git config user.name "jenkins"
-                    git config user.email "jenkins@cogsi"
-                    git tag ${tag}
-                    git push origin ${tag}
-                """
-            } else {
-                bat """
-                    git config user.name "jenkins"
-                    git config user.email "jenkins@cogsi"
-                    git tag ${tag}
-                    git push origin ${tag}
-                """
-            }
-
-            echo "Tag ${tag} successfully created and pushed."
-            echo "Running health-check..."
-
-            def response = ''
-
-            if (isUnix()) {
-                response = sh(
-                    script: "curl -s -o /dev/null -w \"%{http_code}\" http://192.168.56.10:8082/employees",
-                    returnStdout: true
-                ).trim()
-            } else {
-                response = bat
-                }(
-                    script: """
-                        powershell -Command "(Invoke-WebRequest -Uri 'http://192.168.56.10:8082/employees' -UseBasicParsing).StatusCode"
-                    """,
-                    returnStdout: true
-                ).trim()
-            }
-
-            if (response == '200') {
-                echo "Application is healthy!"
-            } else {
-                echo "Application may be be unstable or unreachable!"
-            }
         }
 
         failure {
             echo "Build failed!"
-        }
-
-        always {
-            echo "Pipeline execution completed."
         }
     }
 }
