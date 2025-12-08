@@ -40,17 +40,39 @@ pipeline {
         stage('Test') {
             steps {
                 echo "Running test..."
+                stage ('Unit Test') {
+                    agent { label 'node-1' }
 
-                dir('CA2/PART-II/gradle-tut-rest') {
-                    script {
-                        if (isUnix()) {
-                            sh './gradlew test integrationTest'
-                        } else {
-                            bat 'gradlew.bat test integrationTest'
+                    echo "Running unit tests..."
+
+                    dir('CA2/PART-II/gradle-tut-rest') {
+                        script {
+                            if (isUnix()) {
+                                sh './gradlew test'
+                            } else {
+                                bat 'gradlew.bat test'
+                            }
                         }
+                        junit 'build/test-results/test/*.xml'
                     }
-                    junit 'build/test-results/test/*.xml'
                 }
+                stage (Integration Test) {
+                    agent { label 'node-2' }
+
+                    echo "Running integration tests..."
+
+                    dir('CA2/PART-II/gradle-tut-rest') {
+                        script {
+                            if (isUnix()) {
+                                sh './gradlew integrationTest'
+                            } else {
+                                bat 'gradlew.bat integrationTest'
+                            }
+                        }
+                        junit 'build/test-results/integrationTest/*.xml'
+                    }
+                }
+
             }
         }
 
@@ -136,14 +158,14 @@ pipeline {
 
             if (isUnix()) {
                 response = sh(
-                    script: "curl -s -o /dev/null -w \"%{http_code}\" http://192.168.56.10:8082/employees",
+                    script: "curl -s -o /dev/null -w \"%{http_code}\" http://192.168.56.12:8082/employees",
                     returnStdout: true
                 ).trim()
             } else {
                 response = bat
                 }(
                     script: """
-                        powershell -Command "(Invoke-WebRequest -Uri 'http://192.168.56.10:8082/employees' -UseBasicParsing).StatusCode"
+                        powershell -Command "(Invoke-WebRequest -Uri 'http://192.168.56.12:8082/employees' -UseBasicParsing).StatusCode"
                     """,
                     returnStdout: true
                 ).trim()

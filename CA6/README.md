@@ -328,10 +328,11 @@ nobody approves.
 deployment, adding a safety check before pushing changes to production.
 
 ### Tag Stable Builds
-
 Next, you're going to tag the **stable builds in Jenkins**. To tag these builds, you can use a consistent naming 
 convention such as `stable-v1.0`,`stable-v1.1`, and so on. These tags should only be created for builds that 
 **successfully pass all pipeline stages**.
+
+Use the example presented below as reference:
 
 ```bash
     post {
@@ -459,7 +460,6 @@ Vagrant.configure("2") do |config|
 end
 ```
 
-### ca6-p2 VM
 The `Vagrantfile` begins by defining the base image used to build the virtual environment: `bento/ubuntu-20.04`. The VM 
 **ca6-p2** is then configured using the VirtualBox provider. Its name is set to `ca6-p2`, and it is assigned `1 GB` of 
 RAM and `2 CPU cores`, providing sufficient resources to run the Spring Boot Rest Application within a Docker container.
@@ -538,6 +538,8 @@ should mark the build as **unstable** or **failed** depending on severity.
 6. **Push Docker Image**: Authenticate to Docker Hub and push the tagged Docker image to the registry.
 7. **Deploy**: Execute an Ansible playbook to deploy the newly built Docker image.
 
+Below you will find a `Jenkinsfile` you can use as example to achieve the pretended result.
+
 ```bash
 pipeline {
     agent any
@@ -585,9 +587,9 @@ pipeline {
                 dir('CA2/PART-II/gradle-tut-rest') {
                     script {
                         if (isUnix()) {
-                            sh './gradlew test integrationTest'
+                            sh './gradlew test'
                         } else {
-                            bat 'gradlew.bat test integrationTest'
+                            bat 'gradlew.bat test'
                         }
                     }
                     junit 'build/test-results/test/*.xml'
@@ -660,20 +662,72 @@ pipeline {
 }
 ```
 
-Execute parallel tests (both unit and integration) as part of the
-pipeline, reducing the overall runtime
-▪ Consider using different Jenkins nodes for running these parallel tests to
-demonstrate efficient resource utilization and scalability
+Execute parallel tests as part of the pipeline, reducing the overall runtime
+▪ Consider using different Jenkins nodes for running these parallel tests to demonstrate efficient resource 
+utilization and scalability
 
-Ensure the application is only deployed to production when a
-commit is pushed to the main branch
-▪ Use logic in your Jenkinsfile to verify the branch name before
-triggering deployment actions
- The deployment playbook must:
-▪ Ensure Docker is installed
-▪ Login to Docker Hub and pull the latest Docker image
-▪ Stop and remove the old container if it exists
-▪ Run the new Docker container
+Ensure the application is only deployed to production when a commit is pushed to the main branch
+▪ Use logic in your `Jenkinsfile` to verify the branch name before triggering deployment actions
+
+The deployment playbook must:
+- Ensure Docker is installed
+- Login to Docker Hub and pull the latest Docker image
+- Stop and remove the old container if it exists
+- Run the new Docker container
+
+Apply (in your `Jenkinsfile`) the changes presented below to achieve the desired result:
+
+```bash
+        stage('Test') {
+            steps {
+                echo "Running test..."
+                
+                stage ('Unit Test') {
+                    agent { label 'node-1' }
+
+                    echo "Running unit tests..."
+
+                    dir('CA2/PART-II/gradle-tut-rest') {
+                        script {
+                            if (isUnix()) {
+                                sh './gradlew test'
+                            } else {
+                                bat 'gradlew.bat test'
+                            }
+                        }
+                        junit 'build/test-results/test/*.xml'
+                    }
+                }
+                
+                stage (Integration Test) {
+                    agent { label 'node-2' }
+
+                    echo "Running integration tests..."
+
+                    dir('CA2/PART-II/gradle-tut-rest') {
+                        script {
+                            if (isUnix()) {
+                                sh './gradlew integrationTest'
+                            } else {
+                                bat 'gradlew.bat integrationTest'
+                            }
+                        }
+                        junit 'build/test-results/integrationTest/*.xml'
+                    }
+                }
+            }
+        }
+```
+
+These changes run the automated tests **in parallel** to reduce pipeline runtime and demonstrate efficient resource
+usage.
+
+It contains two parallel stages, the `Unit Tests`, that runs the Gradle test task, executing it on a node
+labeled `node-1` and collects the test results using `junit 'build/test-results/test/*.xml'`. The `Integration Tests`
+runs the Gradle integrationTest task, executing it on a node labeled node-2 and collects the test results using
+`junit 'build/test-results/integrationTest/*.xml'`.
+
+This parallelization allows different tests to run concurrently, leveraging multiple nodes if available.
 
 ### Include `post-actions` Messages in the Pipeline:
 Include the following post-actions in your pipeline:
@@ -705,14 +759,14 @@ achieve the pretended result.
 
             if (isUnix()) {
                 response = sh(
-                    script: "curl -s -o /dev/null -w \"%{http_code}\" http://192.168.56.10:8082/employees",
+                    script: "curl -s -o /dev/null -w \"%{http_code}\" http://192.168.56.12:8082/employees",
                     returnStdout: true
                 ).trim()
             } else {
                 response = bat
                 }(
                     script: """
-                        powershell -Command "(Invoke-WebRequest -Uri 'http://192.168.56.10:8082/employees' -UseBasicParsing).StatusCode"
+                        powershell -Command "(Invoke-WebRequest -Uri 'http://192.168.56.12:8082/employees' -UseBasicParsing).StatusCode"
                     """,
                     returnStdout: true
                 ).trim()
@@ -923,8 +977,6 @@ Advantages
     </tr>
   </tbody>
 </table>
-
-### Implementation
 
 ## Self-Evaluation
 ```bash
